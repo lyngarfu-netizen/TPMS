@@ -1,0 +1,236 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Rajdhani', sans-serif;
+}
+
+body {
+    background-color: #0a0e17;
+    color: #ffffff;
+    padding: 15px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: #111827;
+    border-radius: 12px;
+    border: 1px solid #1f2937;
+    margin-bottom: 15px;
+}
+
+.logo {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: #00f0ff;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border: 1px solid #10b981;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #10b981;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #10b981;
+}
+
+/* LAYOUT CONTAINER FLEXIBILITI */
+.container {
+    display: grid;
+    grid-template-columns: 240px minmax(480px, 1fr) 260px; /* Ruang tengah sekurang-kurangnya 480px */
+    gap: 15px;
+    align-items: start;
+}
+
+/* Jika skrin kecil, automatik susun ke bawah */
+@media (max-width: 1024px) {
+    .container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.card {
+    background: #111827;
+    border: 1px solid #1f2937;
+    border-radius: 16px;
+    padding: 15px;
+}
+
+.card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    color: #9ca3af;
+    margin-bottom: 12px;
+}
+
+.card-title-sub {
+    margin-top: 20px;
+}
+
+.data-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #1f2937;
+    font-size: 14px;
+}
+
+.data-label { color: #9ca3af; }
+.data-value { font-weight: 700; color: #f3f4f6; }
+.highlight-cyan { color: #00f0ff; }
+.highlight-red { color: #ff3366; }
+.signal-good { color: #10b981; }
+
+.btn-action {
+    width: 100%;
+    margin-top: 15px;
+    padding: 10px;
+    background: #00f0ff;
+    color: #0a0e17;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.btn-orange {
+    background: #f97316;
+    color: #ffffff;
+}
+
+/* KOTAK LORI TENGAH */
+.truck-visualizer {
+    position: relative;
+    height: 600px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #0d131f;
+    overflow: hidden;
+}
+
+.truck-svg {
+    height: 520px;
+    width: auto;
+}
+
+/* OVERLAY 8 TAYAR */
+.tire-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.tire-node {
+    position: absolute;
+    width: 110px;
+}
+
+/* SUSUNAN 8 TAYAR (Kiri & Kanan Lori) */
+/* Axle 1 - Depan */
+.node-fl1 { top: 20px; left: 10px; }
+.node-fr1 { top: 20px; right: 10px; }
+
+/* Axle 2 - Tengah */
+.node-fl2 { top: 160px; left: 10px; }
+.node-fr2 { top: 160px; right: 10px; }
+
+/* Axle 3 - Belakang 1 */
+.node-rl1 { top: 310px; left: 10px; }
+.node-rr1 { top: 310px; right: 10px; }
+
+/* Axle 4 - Belakang 2 */
+.node-rl2 { top: 460px; left: 10px; }
+.node-rr2 { top: 460px; right: 10px; }
+
+/* REKA BENTUK KOTAK TAYAR */
+.tire-box {
+    background: rgba(17, 24, 39, 0.95);
+    border: 1px solid #00f0ff;
+    border-radius: 8px;
+    padding: 6px 8px;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+    text-align: center;
+}
+
+.tire-box.warning {
+    border-color: #ff3366;
+    background: rgba(255, 51, 102, 0.2);
+    box-shadow: 0 0 15px rgba(255, 51, 102, 0.6);
+}
+
+.tire-box .label {
+    font-size: 10px;
+    color: #9ca3af;
+    font-weight: 700;
+}
+
+.tire-box .psi {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    color: #00f0ff;
+    margin: 2px 0;
+}
+
+.tire-box.warning .psi { color: #ff3366; }
+.tire-box .psi small { font-size: 9px; }
+
+.tire-box .temp {
+    font-size: 11px;
+    color: #d1d5db;
+}
+
+/* ALERT BOX */
+.alert-box {
+    display: flex;
+    gap: 10px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid #10b981;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+.alert-box.danger {
+    background: rgba(255, 51, 102, 0.15);
+    border-color: #ff3366;
+}
+
+.alert-icon {
+    font-size: 20px;
+    color: #10b981;
+}
+
+.alert-box.danger .alert-icon { color: #ff3366; }
+
+.alert-text h4 {
+    font-size: 13px;
+    color: #10b981;
+}
+
+.alert-box.danger .alert-text h4 { color: #ff3366; }
+
+.alert-text p {
+    font-size: 11px;
+    color: #9ca3af;
+}

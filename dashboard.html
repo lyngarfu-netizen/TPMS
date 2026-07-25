@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heavy Vehicle TPMS Dashboard (8-Wheeler)</title>
+    
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fail CSS Luaran -->
+    <link rel="stylesheet" href="style.css">
+    <!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00f2fe">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="logo">
+            <i class="fa-solid fa-truck-monster"></i> TRUCK TPMS IOT (8 TAYAR)
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="status-badge" id="connection-status">
+                <div class="pulse-dot"></div> CONNECTED
+            </div>
+            <!-- BUTANG LOGOUT -->
+            <button onclick="logoutTPMS()" style="background: #ff3366; color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px;">
+                <i class="fa-solid fa-right-from-bracket"></i> LOGOUT
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        
+        <!-- Left Column: Vehicle Info & Quick Stats -->
+        <div class="card">
+            <div class="card-title">
+                <span><i class="fa-solid fa-truck-moving"></i> Info Kenderaan Berat</span>
+            </div>
+            
+            <div class="data-row">
+                <span class="data-label"><i class="fa-solid fa-wifi"></i> Isyarat IoT</span>
+                <span class="data-value signal-good">-62 dBm</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label"><i class="fa-solid fa-battery-three-quarters"></i> Purata Bateri</span>
+                <span class="data-value">88%</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label"><i class="fa-solid fa-clock"></i> Kemaskini</span>
+                <span class="data-value" id="last-update">Baru Sahaja</span>
+            </div>
+
+            <button class="btn-action" onclick="location.reload()">
+                <i class="fa-solid fa-arrows-rotate"></i> REFRESH DASHBOARD
+            </button>
+        </div>
+
+        <!-- Center Column: Truck Visualizer Overlay -->
+        <div class="card truck-visualizer">
+            <svg class="truck-svg" viewBox="0 0 300 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M 70 30 Q 150 15 230 30 C 250 50 250 140 250 160 L 50 160 C 50 140 50 50 70 30 Z" fill="#182232" stroke="#00f0ff" stroke-width="3"/>
+                <path d="M 80 45 Q 150 35 220 45 L 220 95 Q 150 90 80 95 Z" fill="rgba(0,240,255,0.2)" stroke="rgba(0,240,255,0.5)" stroke-width="1.5"/>
+                <rect x="30" y="80" width="15" height="30" rx="3" fill="#00f0ff" opacity="0.6"/>
+                <rect x="255" y="80" width="15" height="30" rx="3" fill="#00f0ff" opacity="0.6"/>
+                <rect x="45" y="175" width="210" height="480" rx="8" fill="#101520" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+                <line x1="150" y1="185" x2="150" y2="645" stroke="rgba(255,255,255,0.1)" stroke-width="2" stroke-dasharray="5,5"/>
+            </svg>
+
+            <!-- 8-Tire Overlay Nodes -->
+            <div class="tire-overlay">
+                
+                <div class="tire-node node-fl1">
+                    <div class="tire-box" id="box-fl1">
+                        <div class="label">Depan Kiri (FL1)</div>
+                        <div class="psi" id="psi-fl1">-- <small>PSI</small></div>
+                        <div class="temp" id="temp-fl1"><i class="fa-solid fa-temperature-half"></i> --°C</div>
+                    </div>
+                </div>
+
+                <div class="tire-node node-fr1">
+                    <div class="tire-box" id="box-fr1">
+                        <div class="label">Depan Kanan (FR1)</div>
+                        <div class="psi" id="psi-fr1">-- <small>PSI</small></div>
+                        <div class="temp" id="temp-fr1"><i class="fa-solid fa-temperature-half"></i> --°C</div>
+                    </div>
+                </div>
+
+                <div class="tire-node node-fl2">
+                    <div class="tire-box" id="box-fl2">
+                        <div class="label">Tengah Kiri (FL2)</div>
+                        <div class="psi" id="psi-fl2">-- <small>PSI</small></div>
+                        <div class="temp" id="temp-fl2"><i class="fa-solid fa-temperature-half"></i> --°C</div>
+                    </div>
+                </div>
+
+                <div class="tire-node node-fr2">
+                    <div class="tire-box" id="box-fr2">
+                        <div class="label">Tengah Kanan (FR2)</div>
+                        <div class="psi" id="psi-fr2">-- <small>PSI</small></div>
+                        <div class="temp" id="temp-fr2"><i class="fa-solid fa-temperature-half"></i> --°C</div>
+                    </div>
+                </div>
+
+                <div class="tire-node node-rl1">
+                    <div class="tire-box" id="box-rl1">
+                        <div class="label">B. Kiri 1 (RL1)</div>
+                        <div class="psi" id="psi-rl1">-- <small>PSI</small></div>
+                        <div class="temp" id="temp-rl1"><i class="fa-solid fa-temperature-half"></i> --°C</div>
+                    </div>
+                </div>
+
+                <div class="tire-node node-rr1">
+                    <div class="tire-box" id="box-rr1">
+                        <div class="label">B. Kanan 1 (RR1)</div>
+                        <div class="psi" id="psi-rr1">-- <small>PSI</small></div>
+                        <div class="temp" id="temp-rr1"><i class="fa-solid fa-temperature-half"></i> --°C</div>
+                    </div>
+                </div>
+
+                <div class="tire-node node-rl2">
+                    <div class="tire-box" id="box-rl2">
+                        <div class="label">B. Kiri 2 (RL2)</div>
+                        <div class="psi" id="psi-rl2">-- <small>PSI</small></div>
+                        <div class="temp" id="temp-rl2"><i class="fa-solid fa-temperature-half"></i> --°C</div>
+                    </div>
+                </div>
+
+                <div class="tire-node node-rr2">
+                    <div class="tire-box" id="box-rr2">
+                        <div class="label">B. Kanan 2 (RR2)</div>
+                        <div class="psi" id="psi-rr2">-- <small>PSI</small></div>
+                        <div class="temp" id="temp-rr2"><i class="fa-solid fa-temperature-half"></i> --°C</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Right Column: Status Alerts & Thresholds -->
+        <div class="card">
+            <div class="card-title">
+                <span><i class="fa-solid fa-triangle-exclamation"></i> Status Diagnostic</span>
+            </div>
+
+            <div class="alert-box" id="alert-panel">
+                <i class="fa-solid fa-triangle-exclamation alert-icon"></i>
+                <div class="alert-text">
+                    <h4 id="alert-title">SISTEM AKTIF</h4>
+                    <p id="alert-msg">Menunggu data live dari penderia Wokwi...</p>
+                </div>
+            </div>
+
+            <div class="card-title card-title-sub">
+                <span><i class="fa-solid fa-sliders"></i> Had Keselamatan Lori</span>
+            </div>
+
+            <div class="data-row">
+                <span class="data-label">PSI Optimal (Beban)</span>
+                <span class="data-value highlight-cyan">90 - 120 PSI</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">PSI Min (Bahaya)</span>
+                <span class="data-value highlight-red">&lt; 90 PSI</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Suhu Maksimum Tayar</span>
+                <span class="data-value highlight-red">75°C</span>
+            </div>
+
+            <button class="btn-action btn-orange" onclick="window.open('https://maps.google.com?q=kedai+tayar+lori+terdekat', '_blank')">
+                <i class="fa-solid fa-wrench"></i> CARI SERVIS TAYAR LORI
+            </button>
+        </div>
+
+    </div>
+
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="script.js"></script>
+
+
+    <script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js")
+      .then(() => console.log("Service Worker Berjaya Didaftarkan!"))
+      .catch((err) => console.log("SW Error:", err));
+  }
+</script>
+
+</body>
+</html>
