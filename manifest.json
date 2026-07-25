@@ -1,8 +1,7 @@
 {
   "name": "TPMS Lori Dashboard",
   "short_name": "TPMS Lori",
-  "start_url": "https://fu-netizen.github.io/",
-  "scope": "https://fu-netizen.github.io/",
+  "start_url": "login.html",
   "display": "standalone",
   "background_color": "#0d1117",
   "theme_color": "#00f2fe",
