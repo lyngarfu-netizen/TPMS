@@ -1,236 +1,330 @@
+/* ===================================================
+   1. ASAS & TEMA CYBERPUNK DARK
+   =================================================== */
 * {
-    box-sizing: border-box;
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
     font-family: 'Rajdhani', sans-serif;
 }
 
 body {
-    background-color: #0a0e17;
+    background-color: #0b0e14;
     color: #ffffff;
-    padding: 15px;
+    min-height: 100vh;
+    padding: 20px;
 }
 
+/* ===================================================
+   2. HEADER NAVIGATION
+   =================================================== */
 header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 20px;
-    background: #111827;
+    background: #101520;
+    padding: 15px 25px;
     border-radius: 12px;
-    border: 1px solid #1f2937;
-    margin-bottom: 15px;
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    margin-bottom: 25px;
 }
 
 .logo {
     font-family: 'Orbitron', sans-serif;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 800;
     color: #00f0ff;
+    letter-spacing: 1.5px;
 }
 
 .status-badge {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
-    border: 1px solid #10b981;
-    padding: 6px 14px;
+    background: rgba(0, 240, 255, 0.1);
+    color: #00f0ff;
+    padding: 6px 16px;
     border-radius: 20px;
+    border: 1px solid #00f0ff;
+    font-weight: bold;
     font-size: 13px;
-    font-weight: 600;
 }
 
 .pulse-dot {
     width: 8px;
     height: 8px;
-    background-color: #10b981;
+    background-color: #00f0ff;
     border-radius: 50%;
-    box-shadow: 0 0 10px #10b981;
+    box-shadow: 0 0 10px #00f0ff;
 }
 
-/* LAYOUT CONTAINER FLEXIBILITI */
+.btn-logout {
+    background: transparent;
+    border: 1px solid #ff3366;
+    color: #ff3366;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.btn-logout:hover {
+    background: #ff3366;
+    color: #fff;
+}
+
+/* ===================================================
+   3. CONTAINER GRID LAYOUT
+   =================================================== */
 .container {
     display: grid;
-    grid-template-columns: 240px minmax(480px, 1fr) 260px; /* Ruang tengah sekurang-kurangnya 480px */
-    gap: 15px;
+    grid-template-columns: 280px 1fr 300px;
+    gap: 20px;
     align-items: start;
 }
 
-/* Jika skrin kecil, automatik susun ke bawah */
-@media (max-width: 1024px) {
-    .container {
-        grid-template-columns: 1fr;
-    }
-}
-
 .card {
-    background: #111827;
-    border: 1px solid #1f2937;
-    border-radius: 16px;
-    padding: 15px;
+    background: #101520;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 20px;
 }
 
 .card-title {
     font-family: 'Orbitron', sans-serif;
-    font-size: 14px;
-    color: #9ca3af;
-    margin-bottom: 12px;
+    color: #00f0ff;
+    font-size: 16px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+    padding-bottom: 10px;
 }
 
 .card-title-sub {
-    margin-top: 20px;
+    margin-top: 25px;
 }
 
 .data-row {
     display: flex;
     justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid #1f2937;
-    font-size: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.data-label { color: #9ca3af; }
-.data-value { font-weight: 700; color: #f3f4f6; }
-.highlight-cyan { color: #00f0ff; }
-.highlight-red { color: #ff3366; }
-.signal-good { color: #10b981; }
+.data-label {
+    color: #8a99ad;
+}
+
+.data-value {
+    font-weight: bold;
+}
+
+.signal-good { color: #00ff88; }
+.highlight-cyan { color: #00f0ff; font-weight: bold; }
+.highlight-red { color: #ff3366; font-weight: bold; }
 
 .btn-action {
     width: 100%;
-    margin-top: 15px;
-    padding: 10px;
     background: #00f0ff;
-    color: #0a0e17;
+    color: #000;
     border: none;
+    padding: 12px;
     border-radius: 8px;
-    font-weight: 700;
+    font-weight: 800;
     cursor: pointer;
-    font-size: 13px;
+    margin-top: 15px;
+    font-family: 'Orbitron', sans-serif;
+    transition: 0.3s;
+}
+
+.btn-action:hover {
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
 }
 
 .btn-orange {
-    background: #f97316;
-    color: #ffffff;
+    background: #ff9900;
+    color: #fff;
 }
 
-/* KOTAK LORI TENGAH */
+/* ===================================================
+   4. TRUCK VISUALIZER & OVERLAY KOORDINAT TAYAR
+   =================================================== */
 .truck-visualizer {
     position: relative;
-    height: 600px;
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #0d131f;
-    overflow: hidden;
+    min-height: 520px;
+    background: #0d121c;
 }
 
 .truck-svg {
-    height: 520px;
+    height: 480px;
     width: auto;
 }
 
-/* OVERLAY 8 TAYAR */
 .tire-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    pointer-events: none;
 }
 
 .tire-node {
     position: absolute;
-    width: 110px;
+    pointer-events: auto;
 }
 
-/* SUSUNAN 8 TAYAR (Kiri & Kanan Lori) */
-/* Axle 1 - Depan */
-.node-fl1 { top: 20px; left: 10px; }
-.node-fr1 { top: 20px; right: 10px; }
-
-/* Axle 2 - Tengah */
-.node-fl2 { top: 160px; left: 10px; }
-.node-fr2 { top: 160px; right: 10px; }
-
-/* Axle 3 - Belakang 1 */
-.node-rl1 { top: 310px; left: 10px; }
-.node-rr1 { top: 310px; right: 10px; }
-
-/* Axle 4 - Belakang 2 */
-.node-rl2 { top: 460px; left: 10px; }
-.node-rr2 { top: 460px; right: 10px; }
-
-/* REKA BENTUK KOTAK TAYAR */
 .tire-box {
-    background: rgba(17, 24, 39, 0.95);
-    border: 1px solid #00f0ff;
+    background: rgba(16, 21, 32, 0.95);
+    border: 2px solid #00f0ff;
     border-radius: 8px;
-    padding: 6px 8px;
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+    padding: 8px 12px;
+    min-width: 110px;
     text-align: center;
-}
-
-.tire-box.warning {
-    border-color: #ff3366;
-    background: rgba(255, 51, 102, 0.2);
-    box-shadow: 0 0 15px rgba(255, 51, 102, 0.6);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+    transition: all 0.3s ease;
 }
 
 .tire-box .label {
-    font-size: 10px;
-    color: #9ca3af;
-    font-weight: 700;
+    font-size: 12px;
+    color: #8a99ad;
 }
 
 .tire-box .psi {
     font-family: 'Orbitron', sans-serif;
-    font-size: 15px;
+    font-size: 18px;
     font-weight: 800;
     color: #00f0ff;
-    margin: 2px 0;
 }
 
-.tire-box.warning .psi { color: #ff3366; }
-.tire-box .psi small { font-size: 9px; }
-
-.tire-box .temp {
-    font-size: 11px;
-    color: #d1d5db;
+/* Kesan Amaran Jika PSI Bahaya (< 90 PSI / > 120 PSI) */
+.tire-box.warning {
+    border-color: #ff3366 !important;
+    box-shadow: 0 0 15px rgba(255, 51, 102, 0.6) !important;
+    animation: blink 1s infinite alternate;
 }
 
-/* ALERT BOX */
+.tire-box.warning .psi {
+    color: #ff3366 !important;
+}
+
+@keyframes blink {
+    from { opacity: 1; }
+    to { opacity: 0.7; }
+}
+
+/* KOORDINAT SUSUNAN 6 TAYAR (DESKTOP) */
+.node-fl1 { top: 6%; left: 3%; }
+.node-fr1 { top: 6%; right: 3%; }
+
+.node-bl1 { top: 48%; left: 3%; }
+.node-br1 { top: 48%; right: 3%; }
+
+.node-bl2 { top: 76%; left: 3%; }
+.node-br2 { top: 76%; right: 3%; }
+
+/* ===================================================
+   5. ALERT PANEL
+   =================================================== */
 .alert-box {
     display: flex;
-    gap: 10px;
-    background: rgba(16, 185, 129, 0.1);
-    border: 1px solid #10b981;
-    border-radius: 10px;
-    padding: 10px;
-    margin-bottom: 15px;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid #00ff88;
+    padding: 12px;
+    border-radius: 8px;
+    color: #00ff88;
 }
 
 .alert-box.danger {
-    background: rgba(255, 51, 102, 0.15);
+    background: rgba(255, 51, 102, 0.1);
     border-color: #ff3366;
+    color: #ff3366;
 }
 
 .alert-icon {
-    font-size: 20px;
-    color: #10b981;
+    font-size: 22px;
 }
-
-.alert-box.danger .alert-icon { color: #ff3366; }
 
 .alert-text h4 {
+    font-family: 'Orbitron', sans-serif;
     font-size: 13px;
-    color: #10b981;
 }
 
-.alert-box.danger .alert-text h4 { color: #ff3366; }
-
 .alert-text p {
-    font-size: 11px;
-    color: #9ca3af;
+    font-size: 12px;
+}
+
+/* ===================================================
+   6. RESPONSIF UNTUK MOBIL / PHONE VIEW (@media)
+   =================================================== */
+@media (max-width: 992px) {
+    body {
+        padding: 12px;
+    }
+
+    /* Tukar susunan grid kepada 1 kolum menegak */
+    .container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .truck-visualizer {
+        min-height: 420px;
+        padding: 10px 0;
+        overflow: hidden;
+    }
+
+    .truck-svg {
+        height: 380px;
+    }
+
+    /* Kecilkan padan & saiz tulisan kotak tayar untuk phone */
+    .tire-box {
+        min-width: 85px;
+        padding: 5px 6px;
+    }
+
+    .tire-box .label {
+        font-size: 10px;
+    }
+
+    .tire-box .psi {
+        font-size: 14px;
+    }
+
+    /* Pelarasan rapat koordinat tayar di skrin telefon */
+    .node-fl1 { top: 4%; left: 1%; }
+    .node-fr1 { top: 4%; right: 1%; }
+
+    .node-bl1 { top: 46%; left: 1%; }
+    .node-br1 { top: 46%; right: 1%; }
+
+    .node-bl2 { top: 74%; left: 1%; }
+    .node-br2 { top: 74%; right: 1%; }
+}
+
+@media (max-width: 480px) {
+    header {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+
+    .tire-box {
+        min-width: 75px;
+        padding: 4px 4px;
+    }
+
+    .tire-box .label {
+        font-size: 9px;
+    }
+
+    .tire-box .psi {
+        font-size: 12px;
+    }
 }
