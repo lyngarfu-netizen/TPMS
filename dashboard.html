@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Heavy Vehicle TPMS Dashboard (8-Wheeler)</title>
+    <title>Heavy Vehicle TPMS Dashboard (6-Wheeler)</title>
     
     <!-- Google Fonts & FontAwesome Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
@@ -12,17 +12,17 @@
     <!-- Fail CSS Luaran -->
     <link rel="stylesheet" href="style.css">
     <!-- PWA Manifest -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#00f2fe">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00f2fe">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 
     <!-- Header Navigation -->
     <header>
         <div class="logo">
-            <i class="fa-solid fa-truck-monster"></i> TRUCK TPMS IOT (8 TAYAR)
+            <i class="fa-solid fa-truck-monster"></i> TRUCK TPMS IOT
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
             <div class="status-badge" id="connection-status">
@@ -73,14 +73,13 @@
                 <line x1="150" y1="185" x2="150" y2="645" stroke="rgba(255,255,255,0.1)" stroke-width="2" stroke-dasharray="5,5"/>
             </svg>
 
-            <!-- 8-Tire Overlay Nodes -->
+            <!-- Tire Overlay Nodes -->
             <div class="tire-overlay">
                 
                 <div class="tire-node node-fl1">
                     <div class="tire-box" id="box-fl1">
                         <div class="label">Depan Kiri (FL1)</div>
                         <div class="psi" id="psi-fl1">-- <small>PSI</small></div>
-                        <div class="temp" id="temp-fl1"><i class="fa-solid fa-temperature-half"></i> --°C</div>
                     </div>
                 </div>
 
@@ -88,23 +87,6 @@
                     <div class="tire-box" id="box-fr1">
                         <div class="label">Depan Kanan (FR1)</div>
                         <div class="psi" id="psi-fr1">-- <small>PSI</small></div>
-                        <div class="temp" id="temp-fr1"><i class="fa-solid fa-temperature-half"></i> --°C</div>
-                    </div>
-                </div>
-
-                <div class="tire-node node-fl2">
-                    <div class="tire-box" id="box-fl2">
-                        <div class="label">Tengah Kiri (FL2)</div>
-                        <div class="psi" id="psi-fl2">-- <small>PSI</small></div>
-                        <div class="temp" id="temp-fl2"><i class="fa-solid fa-temperature-half"></i> --°C</div>
-                    </div>
-                </div>
-
-                <div class="tire-node node-fr2">
-                    <div class="tire-box" id="box-fr2">
-                        <div class="label">Tengah Kanan (FR2)</div>
-                        <div class="psi" id="psi-fr2">-- <small>PSI</small></div>
-                        <div class="temp" id="temp-fr2"><i class="fa-solid fa-temperature-half"></i> --°C</div>
                     </div>
                 </div>
 
@@ -112,7 +94,6 @@
                     <div class="tire-box" id="box-rl1">
                         <div class="label">B. Kiri 1 (RL1)</div>
                         <div class="psi" id="psi-rl1">-- <small>PSI</small></div>
-                        <div class="temp" id="temp-rl1"><i class="fa-solid fa-temperature-half"></i> --°C</div>
                     </div>
                 </div>
 
@@ -120,7 +101,6 @@
                     <div class="tire-box" id="box-rr1">
                         <div class="label">B. Kanan 1 (RR1)</div>
                         <div class="psi" id="psi-rr1">-- <small>PSI</small></div>
-                        <div class="temp" id="temp-rr1"><i class="fa-solid fa-temperature-half"></i> --°C</div>
                     </div>
                 </div>
 
@@ -128,7 +108,6 @@
                     <div class="tire-box" id="box-rl2">
                         <div class="label">B. Kiri 2 (RL2)</div>
                         <div class="psi" id="psi-rl2">-- <small>PSI</small></div>
-                        <div class="temp" id="temp-rl2"><i class="fa-solid fa-temperature-half"></i> --°C</div>
                     </div>
                 </div>
 
@@ -136,7 +115,6 @@
                     <div class="tire-box" id="box-rr2">
                         <div class="label">B. Kanan 2 (RR2)</div>
                         <div class="psi" id="psi-rr2">-- <small>PSI</small></div>
-                        <div class="temp" id="temp-rr2"><i class="fa-solid fa-temperature-half"></i> --°C</div>
                     </div>
                 </div>
 
@@ -169,10 +147,6 @@
                 <span class="data-label">PSI Min (Bahaya)</span>
                 <span class="data-value highlight-red">&lt; 90 PSI</span>
             </div>
-            <div class="data-row">
-                <span class="data-label">Suhu Maksimum Tayar</span>
-                <span class="data-value highlight-red">75°C</span>
-            </div>
 
             <button class="btn-action btn-orange" onclick="window.open('https://maps.google.com?q=kedai+tayar+lori+terdekat', '_blank')">
                 <i class="fa-solid fa-wrench"></i> CARI SERVIS TAYAR LORI
@@ -184,14 +158,13 @@
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script src="script.js"></script>
 
-
     <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js")
-      .then(() => console.log("Service Worker Berjaya Didaftarkan!"))
-      .catch((err) => console.log("SW Error:", err));
-  }
-</script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("sw.js")
+            .then(() => console.log("Service Worker Berjaya Didaftarkan!"))
+            .catch((err) => console.log("SW Error:", err));
+        }
+    </script>
 
 </body>
 </html>
