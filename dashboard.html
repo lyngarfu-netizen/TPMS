@@ -3,79 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Heavy Vehicle TPMS Dashboard (6-Wheeler)</title>
-    
-    <!-- Google Fonts & FontAwesome Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <title>Dashboard TPMS Kenderaan Berat</title>
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Fail CSS Luaran -->
+    <!-- MQTT Client Library -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <link rel="stylesheet" href="style.css">
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#00f2fe">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 
     <!-- Header Navigation -->
     <header>
         <div class="logo">
-            <i class="fa-solid fa-truck-monster"></i> TRUCK TPMS IOT
+            <i class="fa-solid fa-truck-monster"></i> TPMS MONITORING
         </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <div class="status-badge" id="connection-status">
-                <div class="pulse-dot"></div> CONNECTED
-            </div>
-            <!-- BUTANG LOGOUT -->
-            <button onclick="logoutTPMS()" style="background: #ff3366; color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px;">
-                <i class="fa-solid fa-right-from-bracket"></i> LOGOUT
-            </button>
+        <div class="status-badge" id="connection-status">
+            <div class="pulse-dot"></div> CONNECTING...
         </div>
+        <button class="btn-logout" onclick="logoutTPMS()"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
     </header>
 
-    <!-- Main Content -->
+    <!-- Main Grid Container -->
     <div class="container">
         
-        <!-- Left Column: Vehicle Info & Quick Stats -->
+        <!-- Panel Kiri: Info Kenderaan -->
         <div class="card">
-            <div class="card-title">
-                <span><i class="fa-solid fa-truck-moving"></i> Info Kenderaan Berat</span>
-            </div>
+            <div class="card-title"><i class="fa-solid fa-truck-front"></i> Info Kenderaan</div>
             
             <div class="data-row">
-                <span class="data-label"><i class="fa-solid fa-wifi"></i> Isyarat IoT</span>
-                <span class="data-value signal-good">-62 dBm</span>
+                <span class="data-label">No. Pendaftaran</span>
+                <span class="data-value highlight-cyan">VKT 8821</span>
             </div>
             <div class="data-row">
-                <span class="data-label"><i class="fa-solid fa-battery-three-quarters"></i> Purata Bateri</span>
+                <span class="data-label">Isyarat IoT</span>
+                <span class="data-value signal-good"><i class="fa-solid fa-wifi"></i> -62 dBm</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Purata Bateri</span>
                 <span class="data-value">88%</span>
             </div>
             <div class="data-row">
-                <span class="data-label"><i class="fa-solid fa-clock"></i> Kemaskini</span>
+                <span class="data-label">Kemaskini Terakhir</span>
                 <span class="data-value" id="last-update">Baru Sahaja</span>
             </div>
 
-            <button class="btn-action" onclick="location.reload()">
-                <i class="fa-solid fa-arrows-rotate"></i> REFRESH DASHBOARD
-            </button>
+            <button class="btn-action" onclick="window.location.reload()"><i class="fa-solid fa-rotate-right"></i> REFRESH DASHBOARD</button>
         </div>
 
-        <!-- Center Column: Truck Visualizer Overlay -->
+        <!-- Panel Tengah: Visualizer Lori & 6 Tayar -->
         <div class="card truck-visualizer">
-            <svg class="truck-svg" viewBox="0 0 300 700" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M 70 30 Q 150 15 230 30 C 250 50 250 140 250 160 L 50 160 C 50 140 50 50 70 30 Z" fill="#182232" stroke="#00f0ff" stroke-width="3"/>
-                <path d="M 80 45 Q 150 35 220 45 L 220 95 Q 150 90 80 95 Z" fill="rgba(0,240,255,0.2)" stroke="rgba(0,240,255,0.5)" stroke-width="1.5"/>
-                <rect x="30" y="80" width="15" height="30" rx="3" fill="#00f0ff" opacity="0.6"/>
-                <rect x="255" y="80" width="15" height="30" rx="3" fill="#00f0ff" opacity="0.6"/>
-                <rect x="45" y="175" width="210" height="480" rx="8" fill="#101520" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
-                <line x1="150" y1="185" x2="150" y2="645" stroke="rgba(255,255,255,0.1)" stroke-width="2" stroke-dasharray="5,5"/>
+            <!-- Diagram SVG Lori -->
+            <svg class="truck-svg" viewBox="0 0 200 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Head Lori -->
+                <path d="M 40 100 Q 40 30 100 30 Q 160 30 160 100 L 160 140 L 40 140 Z" fill="#161f30" stroke="#00f0ff" stroke-width="3"/>
+                <!-- Cermin Depan -->
+                <path d="M 55 90 Q 55 50 100 50 Q 145 50 145 90 Z" fill="#0d3b4c" stroke="#00f0ff" stroke-width="1.5"/>
+                <!-- Cermin Sisi Kiri & Kanan -->
+                <rect x="25" y="70" width="10" height="20" rx="3" fill="#00f0ff"/>
+                <rect x="165" y="70" width="10" height="20" rx="3" fill="#00f0ff"/>
+                <!-- Badan Belakang (Trailer Body) -->
+                <rect x="40" y="150" width="120" height="230" rx="8" fill="#101520" stroke="#2a384e" stroke-width="3"/>
+                <line x1="100" y1="150" x2="100" y2="380" stroke="#2a384e" stroke-dasharray="4" />
             </svg>
 
-            <!-- Tire Overlay Nodes -->
+            <!-- Layer Node Tayar (6 Tayar) -->
             <div class="tire-overlay">
-                
+                <!-- Depan Kiri -->
                 <div class="tire-node node-fl1">
                     <div class="tire-box" id="box-fl1">
                         <div class="label">Depan Kiri (FL1)</div>
@@ -83,6 +77,7 @@
                     </div>
                 </div>
 
+                <!-- Depan Kanan -->
                 <div class="tire-node node-fr1">
                     <div class="tire-box" id="box-fr1">
                         <div class="label">Depan Kanan (FR1)</div>
@@ -90,81 +85,69 @@
                     </div>
                 </div>
 
-                <div class="tire-node node-rl1">
-                    <div class="tire-box" id="box-rl1">
-                        <div class="label">B. Kiri 1 (RL1)</div>
-                        <div class="psi" id="psi-rl1">-- <small>PSI</small></div>
+                <!-- Belakang Kiri 1 -->
+                <div class="tire-node node-bl1">
+                    <div class="tire-box" id="box-bl1">
+                        <div class="label">B. Kiri 1 (BL1)</div>
+                        <div class="psi" id="psi-bl1">-- <small>PSI</small></div>
                     </div>
                 </div>
 
-                <div class="tire-node node-rr1">
-                    <div class="tire-box" id="box-rr1">
-                        <div class="label">B. Kanan 1 (RR1)</div>
-                        <div class="psi" id="psi-rr1">-- <small>PSI</small></div>
+                <!-- Belakang Kanan 1 -->
+                <div class="tire-node node-br1">
+                    <div class="tire-box" id="box-br1">
+                        <div class="label">B. Kanan 1 (BR1)</div>
+                        <div class="psi" id="psi-br1">-- <small>PSI</small></div>
                     </div>
                 </div>
 
-                <div class="tire-node node-rl2">
-                    <div class="tire-box" id="box-rl2">
-                        <div class="label">B. Kiri 2 (RL2)</div>
-                        <div class="psi" id="psi-rl2">-- <small>PSI</small></div>
+                <!-- Belakang Kiri 2 -->
+                <div class="tire-node node-bl2">
+                    <div class="tire-box" id="box-bl2">
+                        <div class="label">B. Kiri 2 (BL2)</div>
+                        <div class="psi" id="psi-bl2">-- <small>PSI</small></div>
                     </div>
                 </div>
 
-                <div class="tire-node node-rr2">
-                    <div class="tire-box" id="box-rr2">
-                        <div class="label">B. Kanan 2 (RR2)</div>
-                        <div class="psi" id="psi-rr2">-- <small>PSI</small></div>
+                <!-- Belakang Kanan 2 -->
+                <div class="tire-node node-br2">
+                    <div class="tire-box" id="box-br2">
+                        <div class="label">B. Kanan 2 (BR2)</div>
+                        <div class="psi" id="psi-br2">-- <small>PSI</small></div>
                     </div>
                 </div>
-
             </div>
         </div>
 
-        <!-- Right Column: Status Alerts & Thresholds -->
+        <!-- Panel Kanan: Status Diagnostic -->
         <div class="card">
-            <div class="card-title">
-                <span><i class="fa-solid fa-triangle-exclamation"></i> Status Diagnostic</span>
-            </div>
-
+            <div class="card-title"><i class="fa-solid fa-triangle-exclamation"></i> Status Diagnostic</div>
+            
+            <!-- Alert Panel -->
             <div class="alert-box" id="alert-panel">
-                <i class="fa-solid fa-triangle-exclamation alert-icon"></i>
+                <i class="fa-solid fa-shield-halved alert-icon"></i>
                 <div class="alert-text">
-                    <h4 id="alert-title">SISTEM AKTIF</h4>
-                    <p id="alert-msg">Menunggu data live dari penderia Wokwi...</p>
+                    <h4 id="alert-title">SISTEM NORMAL</h4>
+                    <p id="alert-msg">Semua 6 tayar berada dalam julat selamat.</p>
                 </div>
             </div>
 
-            <div class="card-title card-title-sub">
-                <span><i class="fa-solid fa-sliders"></i> Had Keselamatan Lori</span>
-            </div>
-
+            <div class="card-title card-title-sub"><i class="fa-solid fa-sliders"></i> Had Keselamatan Lori</div>
+            
             <div class="data-row">
                 <span class="data-label">PSI Optimal (Beban)</span>
                 <span class="data-value highlight-cyan">90 - 120 PSI</span>
             </div>
             <div class="data-row">
-                <span class="data-label">PSI Min (Bahaya)</span>
+                <span class="data-label">PSI Min / Bahaya</span>
                 <span class="data-value highlight-red">&lt; 90 PSI</span>
             </div>
 
-            <button class="btn-action btn-orange" onclick="window.open('https://maps.google.com?q=kedai+tayar+lori+terdekat', '_blank')">
-                <i class="fa-solid fa-wrench"></i> CARI SERVIS TAYAR LORI
-            </button>
+            <button class="btn-action btn-orange"><i class="fa-solid fa-wrench"></i> CARI SERVIS TAYAR LORI</button>
         </div>
 
     </div>
 
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script src="script.js"></script>
-
-    <script>
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("sw.js")
-            .then(() => console.log("Service Worker Berjaya Didaftarkan!"))
-            .catch((err) => console.log("SW Error:", err));
-        }
-    </script>
-
 </body>
 </html>
