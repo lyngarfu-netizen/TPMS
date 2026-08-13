@@ -28,6 +28,35 @@ let lowPressureTires = [];
 let minLimit = 90;
 let maxLimit = 120;
 
+// ==========================================
+// 3. FUNGSI NOTIFIKASI, BUNYI & GETARAN
+// ==========================================
+function triggerAlertEffects() {
+    // Getaran telefon (Getar 200ms, rehat 100ms, getar 200ms)
+    if ("vibrate" in navigator) {
+        navigator.vibrate([200, 100, 200]);
+    }
+
+    // Bunyi amaran (Web Audio API)
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.3);
+    } catch (e) {
+        console.log("Audio context disekat pelayar:", e);
+    }
+}
+
 client.on("connect", () => {
     console.log("MQTT Connected!");
     const statusBox = document.getElementById("connection-status");
@@ -38,6 +67,11 @@ client.on("connect", () => {
     // Langgan semua topik lori (termasuk tayar dan config)
     client.subscribe("lori/VKT8821/tayar/#");
     client.subscribe("lori/VKT8821/config/#");
+
+    // Minta izin untuk paparkan notifikasi browser
+    if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
 });
 
 client.on("message", (topic, message) => {
@@ -71,8 +105,18 @@ client.on("message", (topic, message) => {
                 // Amaran Tekanan mengikut had dinamik (minLimit & maxLimit)
                 if (data.psi < minLimit || data.psi > maxLimit) {
                     boxElement.classList.add("warning");
+                    
                     if (!lowPressureTires.includes(target.name)) {
                         lowPressureTires.push(target.name);
+                        
+                        // Cetuskan kesan amaran (Bunyi, Getar & Notifikasi Browser)
+                        triggerAlertEffects();
+
+                        if ("Notification" in window && Notification.permission === "granted") {
+                            new Notification("AMARAN TPMS LORI!", {
+                                body: `Perhatian! Tayar ${target.name} bermasalah (${data.psi} PSI).`,
+                            });
+                        }
                     }
                 } else {
                     boxElement.classList.remove("warning");
@@ -90,7 +134,6 @@ client.on("message", (topic, message) => {
                         alertTitle.innerText = "AMARAN TEKANAN LORI!";
                         alertMsg.innerText = `Tayar bermasalah: ${lowPressureTires.join(", ")}`;
                     } else {
-                        alertPanel.classList.remove("zIndex", "danger"); // Lindung dari ralat kelas
                         alertPanel.classList.remove("danger");
                         alertTitle.innerText = "SISTEM NORMAL";
                         alertMsg.innerText = "Semua 6 tayar berada dalam julat selamat.";
