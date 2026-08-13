@@ -14,12 +14,12 @@ const client = mqtt.connect(MQTT_BROKER);
 
 // Pemadan Topik MQTT ke ID HTML (6 Tayar: FL1, FR1, BL1, BR1, BL2, BR2)
 const tireMap = {
-    "lori/VKT8821/tayar/fl1": { psiId: "psi-fl1", boxId: "box-fl1", name: "FL1" },
-    "lori/VKT8821/tayar/fr1": { psiId: "psi-fr1", boxId: "box-fr1", name: "FR1" },
-    "lori/VKT8821/tayar/bl1": { psiId: "psi-bl1", boxId: "box-bl1", name: "BL1" },
-    "lori/VKT8821/tayar/br1": { psiId: "psi-br1", boxId: "box-br1", name: "BR1" },
-    "lori/VKT8821/tayar/bl2": { psiId: "psi-bl2", boxId: "box-bl2", name: "BL2" },
-    "lori/VKT8821/tayar/br2": { psiId: "psi-br2", boxId: "box-br2", name: "BR2" }
+    "lori/VKT8821/tayar/fl1": { psiId: "psi-fl1", boxId: "box-fl1", name: "Depan Kiri (FL1)" },
+    "lori/VKT8821/tayar/fr1": { psiId: "psi-fr1", boxId: "box-fr1", name: "Depan Kanan (FR1)" },
+    "lori/VKT8821/tayar/bl1": { psiId: "psi-bl1", boxId: "box-bl1", name: "B. Kiri 1 (BL1)" },
+    "lori/VKT8821/tayar/br1": { psiId: "psi-br1", boxId: "box-br1", name: "B. Kanan 1 (BR1)" },
+    "lori/VKT8821/tayar/bl2": { psiId: "psi-bl2", boxId: "box-bl2", name: "B. Kiri 2 (BL2)" },
+    "lori/VKT8821/tayar/br2": { psiId: "psi-br2", boxId: "box-br2", name: "B. Kanan 2 (BR2)" }
 };
 
 let lowPressureTires = [];
@@ -29,15 +29,15 @@ let minLimit = 90;
 let maxLimit = 120;
 
 // ==========================================
-// 3. FUNGSI NOTIFIKASI, BUNYI & GETARAN
+// 3. FUNGSI NOTIFIKASI GAYA WHATSAPP (UI + BUNYI + GETAR)
 // ==========================================
-function triggerAlertEffects() {
-    // Getaran telefon (Getar 200ms, rehat 100ms, getar 200ms)
+function showWhatsAppNotification(title, message) {
+    // 1. Getaran peranti (jika disokong peranti)
     if ("vibrate" in navigator) {
         navigator.vibrate([200, 100, 200]);
     }
 
-    // Bunyi amaran (Web Audio API)
+    // 2. Bunyi amaran (Web Audio API)
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
@@ -53,10 +53,31 @@ function triggerAlertEffects() {
         oscillator.start();
         oscillator.stop(audioCtx.currentTime + 0.3);
     } catch (e) {
-        console.log("Audio context disekat pelayar:", e);
+        console.log("Audio disekat pelayar:", e);
+    }
+
+    // 3. Paparkan Kotak Notifikasi Gaya WhatsApp di Skrin
+    const popup = document.getElementById("whatsapp-notification-popup");
+    const titleEl = document.getElementById("wa-notif-title");
+    const msgEl = document.getElementById("wa-notif-msg");
+
+    if (popup && titleEl && msgEl) {
+        titleEl.innerText = title;
+        msgEl.innerText = message;
+
+        // Tunjuk kotak (tambah kelas show)
+        popup.classList.add("show");
+
+        // Hilangkan automatik selepas 4 saat
+        setTimeout(() => {
+            popup.classList.remove("show");
+        }, 4000);
     }
 }
 
+// ==========================================
+// 4. MQTT EVENT LISTENERS
+// ==========================================
 client.on("connect", () => {
     console.log("MQTT Connected!");
     const statusBox = document.getElementById("connection-status");
@@ -67,11 +88,6 @@ client.on("connect", () => {
     // Langgan semua topik lori (termasuk tayar dan config)
     client.subscribe("lori/VKT8821/tayar/#");
     client.subscribe("lori/VKT8821/config/#");
-
-    // Minta izin untuk paparkan notifikasi browser
-    if ("Notification" in window && Notification.permission !== "granted") {
-        Notification.requestPermission();
-    }
 });
 
 client.on("message", (topic, message) => {
@@ -109,21 +125,18 @@ client.on("message", (topic, message) => {
                     if (!lowPressureTires.includes(target.name)) {
                         lowPressureTires.push(target.name);
                         
-                        // Cetuskan kesan amaran (Bunyi, Getar & Notifikasi Browser)
-                        triggerAlertEffects();
-
-                        if ("Notification" in window && Notification.permission === "granted") {
-                            new Notification("AMARAN TPMS LORI!", {
-                                body: `Perhatian! Tayar ${target.name} bermasalah (${data.psi} PSI).`,
-                            });
-                        }
+                        // Cetuskan notifikasi bentuk WhatsApp, bunyi & getar
+                        showWhatsAppNotification(
+                            "AMARAN TPMS LORI", 
+                            `Tayar ${target.name} bermasalah! Bacaan: ${data.psi} PSI.`
+                        );
                     }
                 } else {
                     boxElement.classList.remove("warning");
                     lowPressureTires = lowPressureTires.filter(t => t !== target.name);
                 }
 
-                // Kemaskini Alert Panel
+                // Kemaskini Alert Panel di Halaman Kanan
                 const alertPanel = document.getElementById("alert-panel");
                 const alertTitle = document.getElementById("alert-title");
                 const alertMsg = document.getElementById("alert-msg");
@@ -140,7 +153,7 @@ client.on("message", (topic, message) => {
                     }
                 }
 
-                // Kemaskini masa
+                // Kemaskini masa terakhir
                 const lastUpdate = document.getElementById("last-update");
                 if (lastUpdate) {
                     const now = new Date();
