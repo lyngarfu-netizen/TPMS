@@ -38,7 +38,7 @@ document.addEventListener("click", () => {
 }, { once: true });
 
 // ==========================================
-// 3. FUNGSI POPUP DALAM WEB APP & ONESIGNAL PUSH
+// 3. FUNGSI POPUP DALAM WEB APP & ONESIGNAL PUSH API
 // ==========================================
 function showAppPopupNotification(title, message) {
     // Getaran peranti (vibrate)
@@ -80,23 +80,30 @@ function showAppPopupNotification(title, message) {
         }, 5000);
     }
 
-    // --- TAMBAHAN ONESIGNAL PUSH NOTIFICATION ---
-    // Ini akan tolak notifikasi terus ke sistem telefon (Lock Screen)
-    if (window.OneSignalDeferred) {
-        window.OneSignalDeferred.push(async function(OneSignal) {
-            try {
-                // Semak sama ada pengguna sudah beri kebenaran notifikasi
-                if (OneSignal.User.PushSubscription.optedIn) {
-                    // Nota: Untuk hantar melalui browser secara langsung ke peranti sendiri 
-                    // tanpa backend server, kita boleh trigger event atau paparkan melalui logik OneSignal.
-                    // Cara paling mudah: OneSignal akan hantar notifikasi luaran jika dipicu.
-                    console.log("OneSignal sedia hantar amaran untuk:", message);
-                }
-            } catch (err) {
-                console.error("Ralat OneSignal:", err);
-            }
-        });
-    }
+    // --- TEMBAK NOTIFIKASI KE LOCK SCREEN TELEFON VIA ONESIGNAL API ---
+    const ONESIGNAL_APP_ID = "i3gbdgxyqeihu5v52leffnn2t";
+    const ONESIGNAL_REST_API_KEY = "os_v2_app_jsetxwkja5gelclxy5x2wxcrxfi3gbdgxyqeihu5v52leffnn2tpxnq6ccwa3piddsoiwutic55c5tqvz6eqeewkfcxukoex5dztorq";
+
+    const headers = {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`
+    };
+
+    const payload = {
+        app_id: ONESIGNAL_APP_ID,
+        included_segments: ["Total Subscriptions"],
+        headings: { "en": title },
+        contents: { "en": message }
+    };
+
+    fetch("https://onesignal.com/api/v1/notifications", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => console.log("Notifikasi Berjaya Dihantar:", data))
+    .catch((error) => console.error("Ralat Hantar Notifikasi:", error));
 }
 
 client.on("connect", () => {
@@ -153,7 +160,7 @@ client.on("message", (topic, message) => {
                     if (!lowPressureTires.includes(target.name)) {
                         lowPressureTires.push(target.name);
                         
-                        // Panggil popup amaran
+                        // Panggil popup amaran dan tembak push notification OneSignal
                         showAppPopupNotification(
                             "AMARAN TPMS LORI", 
                             `Tayar ${target.name} bermasalah! Bacaan: ${psiValue} PSI (Had: ${minLimit}-${maxLimit}).`
