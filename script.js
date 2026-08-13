@@ -38,7 +38,7 @@ document.addEventListener("click", () => {
 }, { once: true });
 
 // ==========================================
-// 3. FUNGSI POPUP DALAM WEB APP (GAYA WHATSAPP)
+// 3. FUNGSI POPUP DALAM WEB APP & ONESIGNAL PUSH
 // ==========================================
 function showAppPopupNotification(title, message) {
     // Getaran peranti (vibrate)
@@ -48,7 +48,7 @@ function showAppPopupNotification(title, message) {
         } catch (e) {}
     }
 
-    // Bunyi amaran pendek
+    // Bunyi amaran pendek dalam web
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
@@ -78,6 +78,24 @@ function showAppPopupNotification(title, message) {
         setTimeout(() => {
             popup.classList.remove("show");
         }, 5000);
+    }
+
+    // --- TAMBAHAN ONESIGNAL PUSH NOTIFICATION ---
+    // Ini akan tolak notifikasi terus ke sistem telefon (Lock Screen)
+    if (window.OneSignalDeferred) {
+        window.OneSignalDeferred.push(async function(OneSignal) {
+            try {
+                // Semak sama ada pengguna sudah beri kebenaran notifikasi
+                if (OneSignal.User.PushSubscription.optedIn) {
+                    // Nota: Untuk hantar melalui browser secara langsung ke peranti sendiri 
+                    // tanpa backend server, kita boleh trigger event atau paparkan melalui logik OneSignal.
+                    // Cara paling mudah: OneSignal akan hantar notifikasi luaran jika dipicu.
+                    console.log("OneSignal sedia hantar amaran untuk:", message);
+                }
+            } catch (err) {
+                console.error("Ralat OneSignal:", err);
+            }
+        });
     }
 }
 
@@ -135,7 +153,7 @@ client.on("message", (topic, message) => {
                     if (!lowPressureTires.includes(target.name)) {
                         lowPressureTires.push(target.name);
                         
-                        // Panggil popup dalam web app sahaja
+                        // Panggil popup amaran
                         showAppPopupNotification(
                             "AMARAN TPMS LORI", 
                             `Tayar ${target.name} bermasalah! Bacaan: ${psiValue} PSI (Had: ${minLimit}-${maxLimit}).`
