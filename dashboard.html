@@ -10,6 +10,17 @@
     <!-- MQTT Client Library -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "4c893bd9-4907-4c45-8977-c76fab5c51b9",
+    });
+  });
+</script>
+    
 </head>
 <body>
 
