@@ -81,7 +81,7 @@ function showAppPopupNotification(title, message) {
     }
 
     // --- TEMBAK NOTIFIKASI KE LOCK SCREEN TELEFON VIA ONESIGNAL API ---
-    const ONESIGNAL_APP_ID = "i3gbdgxyqeihu5v52leffnn2t";
+    const ONESIGNAL_APP_ID = "4c893bd9-4907-4c45-8977-c76fab5c51b9";
     const ONESIGNAL_REST_API_KEY = "os_v2_app_jsetxwkja5gelclxy5x2wxcrxfi3gbdgxyqeihu5v52leffnn2tpxnq6ccwa3piddsoiwutic55c5tqvz6eqeewkfcxukoex5dztorq";
 
     const headers = {
