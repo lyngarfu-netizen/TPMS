@@ -23,7 +23,7 @@ const tireMap = {
 
 let lowPressureTires = [];
 
-// Tetapan Had Awal (Pastikan nilai ini selari dengan sistem anda)
+// Tetapan Had Awal (Nilai lalai sebelum pengguna ubah)
 let minLimit = 90;
 let maxLimit = 120;
 
@@ -54,14 +54,12 @@ document.addEventListener("click", () => {
 // 3. FUNGSI POPUP DALAM WEB APP & ONESIGNAL PUSH API
 // ==========================================
 function showAppPopupNotification(title, message) {
-    // Getaran peranti (vibrate)
     if ("vibrate" in navigator) {
         try {
             navigator.vibrate([300, 100, 300]);
         } catch (e) {}
     }
 
-    // Bunyi amaran pendek dalam web
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
@@ -78,7 +76,6 @@ function showAppPopupNotification(title, message) {
         oscillator.stop(audioCtx.currentTime + 0.3);
     } catch (e) {}
 
-    // Paparkan kotak elemen HTML #whatsapp-notification-popup
     const popup = document.getElementById("whatsapp-notification-popup");
     const titleEl = document.getElementById("wa-notif-title");
     const msgEl = document.getElementById("wa-notif-msg");
@@ -93,7 +90,6 @@ function showAppPopupNotification(title, message) {
         }, 5000);
     }
 
-    // --- TEMBAK NOTIFIKASI KE LOCK SCREEN TELEFON VIA ONESIGNAL API ---
     const ONESIGNAL_APP_ID = "4c893bd9-4907-4c45-8977-c76fab5c51b9";
     const ONESIGNAL_REST_API_KEY = "os_v2_app_jsetxwkja5gelclxy5x2wxcrxfi3gbdgxyqeihu5v52leffnn2tpxnq6ccwa3piddsoiwutic55c5tqvz6eqeewkfcxukoex5dztorq";
 
@@ -131,34 +127,46 @@ client.on("connect", () => {
 });
 
 client.on("message", (topic, message) => {
-    const msgString = message.toString();
+    const msgString = message.toString().trim();
     console.log("Data Terima:", topic, msgString);
 
-    // Auto-Sync Had Min & Max dari ESP32 atau Tetapan Pengguna
+    // 1. TERIMA TETAPAN MIN PSI DARIPADA USER / ESP32
     if (topic === "lori/VKT8821/config/minPSI") {
-        minLimit = parseInt(msgString);
-        console.log("Had Min Dikemaskini:", minLimit);
-        updateSafetyLabels();
-        return;
-    }
-    if (topic === "lori/VKT8821/config/maxPSI") {
-        maxLimit = parseInt(msgString);
-        console.log("Had Max Dikemaskini:", maxLimit);
-        updateSafetyLabels();
+        const parsedMin = parseInt(msgString);
+        if (!isNaN(parsedMin) && parsedMin > 0) {
+            minLimit = parsedMin;
+            console.log("Had Min Berjaya Ditukar oleh User:", minLimit);
+            updateSafetyLabels();
+        }
         return;
     }
 
-    // Tangkap data bacaan tayar
+    // 2. TERIMA TETAPAN MAX PSI DARIPADA USER / ESP32
+    if (topic === "lori/VKT8821/config/maxPSI") {
+        const parsedMax = parseInt(msgString);
+        if (!isNaN(parsedMax) && parsedMax > 0) {
+            maxLimit = parsedMax;
+            console.log("Had Max Berjaya Ditukar oleh User:", maxLimit);
+            updateSafetyLabels();
+        }
+        return;
+    }
+
+    // 3. TANGKAP DATA BACAAN TAYAR & SEMAK AMARAN
     if (tireMap[topic]) {
         try {
-            let psiValue;
-            const rawMessage = msgString.trim();
+            let psiValue = 0;
 
-            if (rawMessage.startsWith("{")) {
-                const data = JSON.parse(rawMessage);
-                psiValue = parseInt(data.psi);
+            if (msgString.startsWith("{")) {
+                const data = JSON.parse(msgString);
+                psiValue = parseInt(data.psi || data.value || 0);
             } else {
-                psiValue = parseInt(rawMessage);
+                psiValue = parseInt(msgString);
+            }
+
+            if (isNaN(psiValue)) {
+                console.warn("Format PSI tidak sah:", msgString);
+                return;
             }
 
             const target = tireMap[topic];
@@ -168,17 +176,16 @@ client.on("message", (topic, message) => {
             if (psiElement && boxElement) {
                 psiElement.innerHTML = `${psiValue} <small>PSI</small>`;
 
-                // Debugging untuk pastikan nilai bacaan dibandingkan dengan betul
-                console.log(`[DEBUG] Tayar: ${target.name} | Nilai PSI: ${psiValue} | Min: ${minLimit} | Max: ${maxLimit}`);
+                // Log untuk semak sama ada nilai bawah min dikesan
+                console.log(`[SEMAK TAYAR] ${target.name} -> Bacaan: ${psiValue} | Had Min: ${minLimit} | Had Max: ${maxLimit}`);
 
-                // Semak amaran ikut had semasa pengguna (Bawah min ATAU Atas max)
+                // Semak amaran (Bawah min ATAU Atas max)
                 if (psiValue < minLimit || psiValue > maxLimit) {
                     boxElement.classList.add("warning");
                     
                     if (!lowPressureTires.includes(target.name)) {
                         lowPressureTires.push(target.name);
                         
-                        // Panggil popup amaran dan tembak push notification OneSignal
                         showAppPopupNotification(
                             "AMARAN TPMS LORI", 
                             `Tayar ${target.name} bermasalah! Bacaan: ${psiValue} PSI (Had: ${minLimit}-${maxLimit}).`
@@ -189,7 +196,7 @@ client.on("message", (topic, message) => {
                     lowPressureTires = lowPressureTires.filter(t => t !== target.name);
                 }
 
-                // Kemaskini Panel Diagnostik Bawah (Kotak Hijau/Merah)
+                // Kemaskini Panel Diagnostik Bawah
                 const alertPanel = document.getElementById("alert-panel");
                 const alertTitle = document.getElementById("alert-title");
                 const alertMsg = document.getElementById("alert-msg");
@@ -213,7 +220,7 @@ client.on("message", (topic, message) => {
                 }
             }
         } catch (e) {
-            console.error("Ralat parse data:", e);
+            console.error("Ralat parse data tayar:", e);
         }
     }
 });
