@@ -1,5 +1,3 @@
-
-
 // ==========================================
 // 1. FUNGSI LOGOUT
 // ==========================================
@@ -25,14 +23,14 @@ const tireMap = {
 
 let lowPressureTires = [];
 
-// Tetapan Had Awal (Boleh diubah oleh pengguna/ESP32 secara dinamik)
+// Tetapan Had Awal (Pastikan nilai ini selari dengan sistem anda)
 let minLimit = 90;
 let maxLimit = 120;
 
 // Fungsi untuk kemaskini paparan teks had keselamatan pada UI secara langsung
 function updateSafetyLabels() {
-    const optimalPsiEl = document.getElementById("optimal-psi-label"); // Pastikan ID ini ada di HTML anda jika perlu
-    const minPsiEl = document.getElementById("min-psi-label");         // Pastikan ID ini ada di HTML anda jika perlu
+    const optimalPsiEl = document.getElementById("optimal-psi-label"); 
+    const minPsiEl = document.getElementById("min-psi-label");         
     
     if (optimalPsiEl) {
         optimalPsiEl.innerText = `${minLimit} - ${maxLimit} PSI`;
@@ -170,7 +168,10 @@ client.on("message", (topic, message) => {
             if (psiElement && boxElement) {
                 psiElement.innerHTML = `${psiValue} <small>PSI</small>`;
 
-                // Semak amaran ikut had semasa pengguna
+                // Debugging untuk pastikan nilai bacaan dibandingkan dengan betul
+                console.log(`[DEBUG] Tayar: ${target.name} | Nilai PSI: ${psiValue} | Min: ${minLimit} | Max: ${maxLimit}`);
+
+                // Semak amaran ikut had semasa pengguna (Bawah min ATAU Atas max)
                 if (psiValue < minLimit || psiValue > maxLimit) {
                     boxElement.classList.add("warning");
                     
