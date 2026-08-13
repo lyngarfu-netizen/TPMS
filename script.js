@@ -1,28 +1,41 @@
-// Konfigurasi MQTT Broker (Contoh menggunakan broker awam standard)
+// Konfigurasi MQTT Broker (Guna port WSS secure untuk GitHub Pages)
 const MQTT_BROKER = "wss://broker.hivemq.com:8884/mqtt";
-const MQTT_TOPIC = "tpms/vkt8821/data"; // Tukar mengikut topik MQTT ESP32 anda
+const MQTT_TOPIC = "tpms/vkt8821/data"; // Pastikan sama dengan kod ESP32 di Wokwi
 
-// Sambung ke MQTT
+// Sambung ke MQTT Broker
 const client = mqtt.connect(MQTT_BROKER);
 
 client.on("connect", () => {
-    document.getElementById("connection-status").innerHTML = '<div class="pulse-dot" style="background: #00ff66;"></div> ONLINE';
-    console.log("Berjaya sambung ke MQTT Broker");
+    const statusBadge = document.getElementById("connection-status");
+    if(statusBadge) {
+        statusBadge.innerHTML = '<div class="pulse-dot" style="background: #00ff66; box-shadow: 0 0 10px #00ff66;"></div> ONLINE';
+    }
+    console.log("Berjaya sambung ke MQTT Broker!");
     client.subscribe(MQTT_TOPIC);
+});
+
+client.on("error", (err) => {
+    console.error("Ralat Sambungan MQTT: ", err);
+    const statusBadge = document.getElementById("connection-status");
+    if(statusBadge) {
+        statusBadge.innerHTML = '<div class="pulse-dot" style="background: #ff3366;"></div> ERROR';
+    }
 });
 
 client.on("message", (topic, payload) => {
     try {
         const data = JSON.parse(payload.toString());
-        // Jangkaan format JSON dari MQTT: 
-        // { "fl1": 110, "fr1": 85, "bl1": 115, "br1": 120, "bl2": 112, "br2": 115 }
+        console.log("Data diterima dari Wokwi:", data);
         
         updateDashboard(data);
         checkTireAlerts(data);
         
-        document.getElementById("last-update").innerText = "Baru Sahaja";
+        const lastUpdate = document.getElementById("last-update");
+        if(lastUpdate) {
+            lastUpdate.innerText = "Baru Sahaja";
+        }
     } catch (e) {
-        console.error("Ralat parse data MQTT:", e);
+        console.error("Ralat parse JSON data:", e);
     }
 });
 
@@ -33,16 +46,19 @@ function updateDashboard(data) {
     tires.forEach(t => {
         if (data[t] !== undefined) {
             const psiVal = data[t];
-            document.getElementById(`psi-${t}`).innerHTML = `${psiVal} <small>PSI</small>`;
+            const psiElement = document.getElementById(`psi-${t}`);
+            if(psiElement) {
+                psiElement.innerHTML = `${psiVal} <small>PSI</small>`;
+            }
             
             const box = document.getElementById(`box-${t}`);
-            // Logik Amaran: Jika kurang dari 90 PSI, tukar jadi merah (Bahaya)
-            if (psiVal < 90) {
-                box.style.borderColor = "#ff3333";
-                box.style.background = "rgba(255, 51, 51, 0.2)";
-            } else {
-                box.style.borderColor = "#00f0ff";
-                box.style.background = "rgba(16, 21, 32, 0.8)";
+            if (box) {
+                // Logik Amaran: Jika kurang dari 90 PSI, tukar jadi merah (Bahaya)
+                if (psiVal < 90) {
+                    box.classList.add("warning");
+                } else {
+                    box.classList.remove("warning");
+                }
             }
         }
     });
@@ -53,7 +69,6 @@ function checkTireAlerts(data) {
     const minPsi = 90;
     let problemTires = [];
     
-    // Nama penuh untuk rujukan spesifik
     const tireNames = {
         fl1: "Depan Kiri (FL1)",
         fr1: "Depan Kanan (FR1)",
@@ -74,36 +89,41 @@ function checkTireAlerts(data) {
     const alertPanel = document.getElementById("alert-panel");
 
     if (problemTires.length > 0) {
-        // Papar status bahaya di panel Diagnostic
-        alertTitle.innerText = "AMARAN TEKANAN RENDAH!";
-        alertMsg.innerText = "Tayar bermasalah: " + problemTires.join(", ");
-        alertPanel.style.borderColor = "#ff3333";
-        alertPanel.style.background = "rgba(255, 51, 51, 0.1)";
+        if(alertTitle) alertTitle.innerText = "AMARAN TEKANAN RENDAH!";
+        if(alertMsg) alertMsg.innerText = "Tayar bermasalah: " + problemTires.join(", ");
+        if(alertPanel) {
+            alertPanel.classList.add("danger");
+        }
 
-        // Papar Custom Popup (Gaya WhatsApp) di skrin
-        showWhatsAppPopup("AMARAN TAYAR KEBOCORAN!", "Bermasalah pada: " + problemTires.join(" | "));
+        // Papar Custom Popup (Gaya WhatsApp)
+        showWhatsAppPopup("AMARAN TAYAR BOCOR!", "Bermasalah pada: " + problemTires.join(" | "));
 
     } else {
-        // Kembali normal
-        alertTitle.innerText = "SISTEM NORMAL";
-        alertMsg.innerText = "Semua 6 tayar berada dalam julat selamat.";
-        alertPanel.style.borderColor = "#2a384e";
-        alertPanel.style.background = "rgba(16, 21, 32, 0.8)";
+        if(alertTitle) alertTitle.innerText = "SISTEM NORMAL";
+        if(alertMsg) alertMsg.innerText = "Semua 6 tayar berada dalam julat selamat.";
+        if(alertPanel) {
+            alertPanel.classList.remove("danger");
+        }
     }
 }
 
 // Fungsi Kawal Popup Notifikasi Di Skrin
 function showWhatsAppPopup(title, message) {
     const popup = document.getElementById("whatsapp-notification-popup");
-    document.getElementById("wa-notif-title").innerText = title;
-    document.getElementById("wa-notif-msg").innerText = message;
+    const titleEl = document.getElementById("wa-notif-title");
+    const msgEl = document.getElementById("wa-notif-msg");
 
-    popup.classList.add("show");
+    if(titleEl) titleEl.innerText = title;
+    if(msgEl) msgEl.innerText = message;
 
-    // Hilangkan sendiri selepas 6 saat
-    setTimeout(() => {
-        popup.classList.remove("show");
-    }, 6000);
+    if(popup) {
+        popup.classList.add("show");
+
+        // Hilangkan sendiri selepas 6 saat
+        setTimeout(() => {
+            popup.classList.remove("show");
+        }, 6000);
+    }
 }
 
 function logoutTPMS() {
