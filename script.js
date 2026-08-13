@@ -23,9 +23,22 @@ const tireMap = {
 
 let lowPressureTires = [];
 
-// Tetapan Had Awal
+// Tetapan Had Awal (Boleh diubah oleh pengguna/ESP32 secara dinamik)
 let minLimit = 90;
 let maxLimit = 120;
+
+// Fungsi untuk kemaskini paparan teks had keselamatan pada UI secara langsung
+function updateSafetyLabels() {
+    const optimalPsiEl = document.getElementById("optimal-psi-label"); // Pastikan ID ini ada di HTML anda jika perlu
+    const minPsiEl = document.getElementById("min-psi-label");         // Pastikan ID ini ada di HTML anda jika perlu
+    
+    if (optimalPsiEl) {
+        optimalPsiEl.innerText = `${minLimit} - ${maxLimit} PSI`;
+    }
+    if (minPsiEl) {
+        minPsiEl.innerText = `< ${minLimit} PSI`;
+    }
+}
 
 // Aktifkan Audio Context apabila pengguna sentuh skrin buat kali pertama
 document.addEventListener("click", () => {
@@ -121,15 +134,17 @@ client.on("message", (topic, message) => {
     const msgString = message.toString();
     console.log("Data Terima:", topic, msgString);
 
-    // Auto-Sync Had Min & Max dari ESP32
+    // Auto-Sync Had Min & Max dari ESP32 atau Tetapan Pengguna
     if (topic === "lori/VKT8821/config/minPSI") {
         minLimit = parseInt(msgString);
         console.log("Had Min Dikemaskini:", minLimit);
+        updateSafetyLabels();
         return;
     }
     if (topic === "lori/VKT8821/config/maxPSI") {
         maxLimit = parseInt(msgString);
         console.log("Had Max Dikemaskini:", maxLimit);
+        updateSafetyLabels();
         return;
     }
 
@@ -153,7 +168,7 @@ client.on("message", (topic, message) => {
             if (psiElement && boxElement) {
                 psiElement.innerHTML = `${psiValue} <small>PSI</small>`;
 
-                // Semak amaran ikut had semasa
+                // Semak amaran ikut had semasa pengguna
                 if (psiValue < minLimit || psiValue > maxLimit) {
                     boxElement.classList.add("warning");
                     
@@ -171,7 +186,7 @@ client.on("message", (topic, message) => {
                     lowPressureTires = lowPressureTires.filter(t => t !== target.name);
                 }
 
-                // Kemaskini Panel Diagnostik Bawah
+                // Kemaskini Panel Diagnostik Bawah (Kotak Hijau/Merah)
                 const alertPanel = document.getElementById("alert-panel");
                 const alertTitle = document.getElementById("alert-title");
                 const alertMsg = document.getElementById("alert-msg");
