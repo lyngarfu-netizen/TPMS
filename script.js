@@ -24,7 +24,7 @@ const tireMap = {
 
 let lowPressureTires = [];
 
-// Tetapan Had Awal (Default sebelum terima dari ESP32)
+// Tetapan Had Awal (Default selamat sekiranya MQTT config lambat sampai)
 let minLimit = 90;
 let maxLimit = 120;
 
