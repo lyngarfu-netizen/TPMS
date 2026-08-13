@@ -1,15 +1,14 @@
-// ===================================================
+// ==========================================
 // 1. FUNGSI LOGOUT
-// ===================================================
+// ==========================================
 function logoutTPMS() {
     localStorage.removeItem("tpms_logged_in");
     window.location.href = "login.html";
 }
 
-// ===================================================
+// ==========================================
 // 2. SAMBUNGAN MQTT BROKER & KEMASKINI TAYAR (6 TAYAR)
-// ===================================================
-// Guna HiveMQ WebSocket Public Broker (Port 8884)
+// ==========================================
 const MQTT_BROKER = "wss://broker.hivemq.com:8884/mqtt";
 const client = mqtt.connect(MQTT_BROKER);
 
@@ -25,19 +24,38 @@ const tireMap = {
 
 let lowPressureTires = [];
 
+// Tetapan Had Awal (Default sebelum terima dari ESP32)
+let minLimit = 90;
+let maxLimit = 120;
+
 client.on("connect", () => {
     console.log("MQTT Connected!");
     const statusBox = document.getElementById("connection-status");
     if (statusBox) {
         statusBox.innerHTML = '<div class="pulse-dot"></div> CONNECTED';
     }
-    // Langgan topic lori
+    
+    // Langgan semua topik lori (termasuk tayar dan config)
     client.subscribe("lori/VKT8821/tayar/#");
+    client.subscribe("lori/VKT8821/config/#");
 });
 
 client.on("message", (topic, message) => {
     console.log("Data Terima:", topic, message.toString());
 
+    // 1. Tangkap data jika ia melibatkan tetapan Had (Config)
+    if (topic === "lori/VKT8821/config/minPSI") {
+        minLimit = parseInt(message.toString());
+        console.log("Had Min Ditukar ke:", minLimit);
+        return;
+    }
+    if (topic === "lori/VKT8821/config/maxPSI") {
+        maxLimit = parseInt(message.toString());
+        console.log("Had Max Ditukar ke:", maxLimit);
+        return;
+    }
+
+    // 2. Tangkap data bacaan tayar
     if (tireMap[topic]) {
         try {
             const data = JSON.parse(message.toString());
@@ -50,8 +68,8 @@ client.on("message", (topic, message) => {
                 // Tampilkan data PSI sahaja
                 psiElement.innerHTML = `${data.psi} <small>PSI</small>`;
 
-                // Amaran Tekanan (< 90 PSI atau > 120 PSI)
-                if (data.psi < 90 || data.psi > 120) {
+                // Amaran Tekanan mengikut had dinamik (minLimit & maxLimit)
+                if (data.psi < minLimit || data.psi > maxLimit) {
                     boxElement.classList.add("warning");
                     if (!lowPressureTires.includes(target.name)) {
                         lowPressureTires.push(target.name);
@@ -72,6 +90,7 @@ client.on("message", (topic, message) => {
                         alertTitle.innerText = "AMARAN TEKANAN LORI!";
                         alertMsg.innerText = `Tayar bermasalah: ${lowPressureTires.join(", ")}`;
                     } else {
+                        alertPanel.classList.remove("zIndex", "danger"); // Lindung dari ralat kelas
                         alertPanel.classList.remove("danger");
                         alertTitle.innerText = "SISTEM NORMAL";
                         alertMsg.innerText = "Semua 6 tayar berada dalam julat selamat.";
