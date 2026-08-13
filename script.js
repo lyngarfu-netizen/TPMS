@@ -106,18 +106,27 @@ client.on("message", (topic, message) => {
     // 2. Tangkap data bacaan tayar
     if (tireMap[topic]) {
         try {
-            const data = JSON.parse(msgString);
-            const target = tireMap[topic];
+            let psiValue;
+            const rawMessage = msgString.trim();
 
+            // Semak sama ada data dihantar sebagai JSON atau nombor mentah
+            if (rawMessage.startsWith("{")) {
+                const data = JSON.parse(rawMessage);
+                psiValue = parseInt(data.psi);
+            } else {
+                psiValue = parseInt(rawMessage);
+            }
+
+            const target = tireMap[topic];
             const psiElement = document.getElementById(target.psiId);
             const boxElement = document.getElementById(target.boxId);
 
             if (psiElement && boxElement) {
-                // Tampilkan data PSI sahaja
-                psiElement.innerHTML = `${data.psi} <small>PSI</small>`;
+                // Tampilkan data PSI
+                psiElement.innerHTML = `${psiValue} <small>PSI</small>`;
 
                 // Amaran Tekanan mengikut had dinamik (minLimit & maxLimit)
-                if (data.psi < minLimit || data.psi > maxLimit) {
+                if (psiValue < minLimit || psiValue > maxLimit) {
                     boxElement.classList.add("warning");
                     
                     if (!lowPressureTires.includes(target.name)) {
@@ -126,7 +135,7 @@ client.on("message", (topic, message) => {
                         // Cetuskan notifikasi bentuk WhatsApp, bunyi & getar
                         showWhatsAppNotification(
                             "AMARAN TPMS LORI", 
-                            `Tayar ${target.name} bermasalah! Bacaan: ${data.psi} PSI (Had: ${minLimit}-${maxLimit}).`
+                            `Tayar ${target.name} bermasalah! Bacaan: ${psiValue} PSI (Had: ${minLimit}-${maxLimit}).`
                         );
                     }
                 } else {
@@ -159,7 +168,7 @@ client.on("message", (topic, message) => {
                 }
             }
         } catch (e) {
-            console.error("Ralat parse JSON:", e);
+            console.error("Ralat memproses data tayar:", e);
         }
     }
 });
