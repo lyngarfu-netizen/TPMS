@@ -1,131 +1,218 @@
-// Konfigurasi MQTT Broker (Guna port WSS secure untuk GitHub Pages)
-const MQTT_BROKER = "wss://broker.hivemq.com:8884/mqtt";
-const MQTT_TOPIC = "tpms/vkt8821/data"; // Pastikan sama dengan kod ESP32 di Wokwi
 
-// Sambung ke MQTT Broker
+
+// ==========================================
+// 1. FUNGSI LOGOUT
+// ==========================================
+function logoutTPMS() {
+    localStorage.removeItem("tpms_logged_in");
+    window.location.href = "login.html";
+}
+
+// ==========================================
+// 2. SAMBUNGAN MQTT BROKER & KEMASKINI TAYAR (6 TAYAR)
+// ==========================================
+const MQTT_BROKER = "wss://broker.hivemq.com:8884/mqtt";
 const client = mqtt.connect(MQTT_BROKER);
 
-client.on("connect", () => {
-    const statusBadge = document.getElementById("connection-status");
-    if(statusBadge) {
-        statusBadge.innerHTML = '<div class="pulse-dot" style="background: #00ff66; box-shadow: 0 0 10px #00ff66;"></div> ONLINE';
-    }
-    console.log("Berjaya sambung ke MQTT Broker!");
-    client.subscribe(MQTT_TOPIC);
-});
+const tireMap = {
+    "lori/VKT8821/tayar/fl1": { psiId: "psi-fl1", boxId: "box-fl1", name: "Depan Kiri (FL1)" },
+    "lori/VKT8821/tayar/fr1": { psiId: "psi-fr1", boxId: "box-fr1", name: "Depan Kanan (FR1)" },
+    "lori/VKT8821/tayar/bl1": { psiId: "psi-bl1", boxId: "box-bl1", name: "B. Kiri 1 (BL1)" },
+    "lori/VKT8821/tayar/br1": { psiId: "psi-br1", boxId: "box-br1", name: "B. Kanan 1 (BR1)" },
+    "lori/VKT8821/tayar/bl2": { psiId: "psi-bl2", boxId: "box-bl2", name: "B. Kiri 2 (BL2)" },
+    "lori/VKT8821/tayar/br2": { psiId: "psi-br2", boxId: "box-br2", name: "B. Kanan 2 (BR2)" }
+};
 
-client.on("error", (err) => {
-    console.error("Ralat Sambungan MQTT: ", err);
-    const statusBadge = document.getElementById("connection-status");
-    if(statusBadge) {
-        statusBadge.innerHTML = '<div class="pulse-dot" style="background: #ff3366;"></div> ERROR';
-    }
-});
+let lowPressureTires = [];
 
-client.on("message", (topic, payload) => {
+// Tetapan Had Awal (Boleh diubah oleh pengguna/ESP32 secara dinamik)
+let minLimit = 90;
+let maxLimit = 120;
+
+// Fungsi untuk kemaskini paparan teks had keselamatan pada UI secara langsung
+function updateSafetyLabels() {
+    const optimalPsiEl = document.getElementById("optimal-psi-label"); // Pastikan ID ini ada di HTML anda jika perlu
+    const minPsiEl = document.getElementById("min-psi-label");         // Pastikan ID ini ada di HTML anda jika perlu
+    
+    if (optimalPsiEl) {
+        optimalPsiEl.innerText = `${minLimit} - ${maxLimit} PSI`;
+    }
+    if (minPsiEl) {
+        minPsiEl.innerText = `< ${minLimit} PSI`;
+    }
+}
+
+// Aktifkan Audio Context apabila pengguna sentuh skrin buat kali pertama
+document.addEventListener("click", () => {
     try {
-        const data = JSON.parse(payload.toString());
-        console.log("Data diterima dari Wokwi:", data);
-        
-        updateDashboard(data);
-        checkTireAlerts(data);
-        
-        const lastUpdate = document.getElementById("last-update");
-        if(lastUpdate) {
-            lastUpdate.innerText = "Baru Sahaja";
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
         }
-    } catch (e) {
-        console.error("Ralat parse JSON data:", e);
-    }
-});
+    } catch (e) {}
+}, { once: true });
 
-// Fungsi kemaskini nilai PSI pada paparan Lori
-function updateDashboard(data) {
-    const tires = ['fl1', 'fr1', 'bl1', 'br1', 'bl2', 'br2'];
-    
-    tires.forEach(t => {
-        if (data[t] !== undefined) {
-            const psiVal = data[t];
-            const psiElement = document.getElementById(`psi-${t}`);
-            if(psiElement) {
-                psiElement.innerHTML = `${psiVal} <small>PSI</small>`;
-            }
-            
-            const box = document.getElementById(`box-${t}`);
-            if (box) {
-                // Logik Amaran: Jika kurang dari 90 PSI, tukar jadi merah (Bahaya)
-                if (psiVal < 90) {
-                    box.classList.add("warning");
-                } else {
-                    box.classList.remove("warning");
-                }
-            }
-        }
-    });
-}
-
-// Fungsi Semak Amaran & Papar Pop-up Gaya WhatsApp
-function checkTireAlerts(data) {
-    const minPsi = 90;
-    let problemTires = [];
-    
-    const tireNames = {
-        fl1: "Depan Kiri (FL1)",
-        fr1: "Depan Kanan (FR1)",
-        bl1: "Belakang Kiri 1 (BL1)",
-        br1: "Belakang Kanan 1 (BR1)",
-        bl2: "Belakang Kiri 2 (BL2)",
-        br2: "Belakang Kanan 2 (BR2)"
-    };
-
-    for (let key in tireNames) {
-        if (data[key] !== undefined && data[key] < minPsi) {
-            problemTires.push(`${tireNames[key]} (${data[key]} PSI)`);
-        }
+// ==========================================
+// 3. FUNGSI POPUP DALAM WEB APP & ONESIGNAL PUSH API
+// ==========================================
+function showAppPopupNotification(title, message) {
+    // Getaran peranti (vibrate)
+    if ("vibrate" in navigator) {
+        try {
+            navigator.vibrate([300, 100, 300]);
+        } catch (e) {}
     }
 
-    const alertTitle = document.getElementById("alert-title");
-    const alertMsg = document.getElementById("alert-msg");
-    const alertPanel = document.getElementById("alert-panel");
+    // Bunyi amaran pendek dalam web
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
 
-    if (problemTires.length > 0) {
-        if(alertTitle) alertTitle.innerText = "AMARAN TEKANAN RENDAH!";
-        if(alertMsg) alertMsg.innerText = "Tayar bermasalah: " + problemTires.join(", ");
-        if(alertPanel) {
-            alertPanel.classList.add("danger");
-        }
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
 
-        // Papar Custom Popup (Gaya WhatsApp)
-        showWhatsAppPopup("AMARAN TAYAR BOCOR!", "Bermasalah pada: " + problemTires.join(" | "));
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
 
-    } else {
-        if(alertTitle) alertTitle.innerText = "SISTEM NORMAL";
-        if(alertMsg) alertMsg.innerText = "Semua 6 tayar berada dalam julat selamat.";
-        if(alertPanel) {
-            alertPanel.classList.remove("danger");
-        }
-    }
-}
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.3);
+    } catch (e) {}
 
-// Fungsi Kawal Popup Notifikasi Di Skrin
-function showWhatsAppPopup(title, message) {
+    // Paparkan kotak elemen HTML #whatsapp-notification-popup
     const popup = document.getElementById("whatsapp-notification-popup");
     const titleEl = document.getElementById("wa-notif-title");
     const msgEl = document.getElementById("wa-notif-msg");
 
-    if(titleEl) titleEl.innerText = title;
-    if(msgEl) msgEl.innerText = message;
-
-    if(popup) {
+    if (popup && titleEl && msgEl) {
+        titleEl.innerText = title;
+        msgEl.innerText = message;
         popup.classList.add("show");
 
-        // Hilangkan sendiri selepas 6 saat
         setTimeout(() => {
             popup.classList.remove("show");
-        }, 6000);
+        }, 5000);
     }
+
+    // --- TEMBAK NOTIFIKASI KE LOCK SCREEN TELEFON VIA ONESIGNAL API ---
+    const ONESIGNAL_APP_ID = "4c893bd9-4907-4c45-8977-c76fab5c51b9";
+    const ONESIGNAL_REST_API_KEY = "os_v2_app_jsetxwkja5gelclxy5x2wxcrxfi3gbdgxyqeihu5v52leffnn2tpxnq6ccwa3piddsoiwutic55c5tqvz6eqeewkfcxukoex5dztorq";
+
+    const headers = {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`
+    };
+
+    const payload = {
+        app_id: ONESIGNAL_APP_ID,
+        included_segments: ["Total Subscriptions"],
+        headings: { "en": title },
+        contents: { "en": message }
+    };
+
+    fetch("https://onesignal.com/api/v1/notifications", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => console.log("Notifikasi Berjaya Dihantar:", data))
+    .catch((error) => console.error("Ralat Hantar Notifikasi:", error));
 }
 
-function logoutTPMS() {
-    window.location.href = "login.html";
-}
+client.on("connect", () => {
+    console.log("MQTT Connected!");
+    const statusBox = document.getElementById("connection-status");
+    if (statusBox) {
+        statusBox.innerHTML = '<div class="pulse-dot"></div> CONNECTED';
+    }
+    
+    client.subscribe("lori/VKT8821/tayar/#");
+    client.subscribe("lori/VKT8821/config/#");
+});
+
+client.on("message", (topic, message) => {
+    const msgString = message.toString();
+    console.log("Data Terima:", topic, msgString);
+
+    // Auto-Sync Had Min & Max dari ESP32 atau Tetapan Pengguna
+    if (topic === "lori/VKT8821/config/minPSI") {
+        minLimit = parseInt(msgString);
+        console.log("Had Min Dikemaskini:", minLimit);
+        updateSafetyLabels();
+        return;
+    }
+    if (topic === "lori/VKT8821/config/maxPSI") {
+        maxLimit = parseInt(msgString);
+        console.log("Had Max Dikemaskini:", maxLimit);
+        updateSafetyLabels();
+        return;
+    }
+
+    // Tangkap data bacaan tayar
+    if (tireMap[topic]) {
+        try {
+            let psiValue;
+            const rawMessage = msgString.trim();
+
+            if (rawMessage.startsWith("{")) {
+                const data = JSON.parse(rawMessage);
+                psiValue = parseInt(data.psi);
+            } else {
+                psiValue = parseInt(rawMessage);
+            }
+
+            const target = tireMap[topic];
+            const psiElement = document.getElementById(target.psiId);
+            const boxElement = document.getElementById(target.boxId);
+
+            if (psiElement && boxElement) {
+                psiElement.innerHTML = `${psiValue} <small>PSI</small>`;
+
+                // Semak amaran ikut had semasa pengguna
+                if (psiValue < minLimit || psiValue > maxLimit) {
+                    boxElement.classList.add("warning");
+                    
+                    if (!lowPressureTires.includes(target.name)) {
+                        lowPressureTires.push(target.name);
+                        
+                        // Panggil popup amaran dan tembak push notification OneSignal
+                        showAppPopupNotification(
+                            "AMARAN TPMS LORI", 
+                            `Tayar ${target.name} bermasalah! Bacaan: ${psiValue} PSI (Had: ${minLimit}-${maxLimit}).`
+                        );
+                    }
+                } else {
+                    boxElement.classList.remove("warning");
+                    lowPressureTires = lowPressureTires.filter(t => t !== target.name);
+                }
+
+                // Kemaskini Panel Diagnostik Bawah (Kotak Hijau/Merah)
+                const alertPanel = document.getElementById("alert-panel");
+                const alertTitle = document.getElementById("alert-title");
+                const alertMsg = document.getElementById("alert-msg");
+
+                if (alertPanel && alertTitle && alertMsg) {
+                    if (lowPressureTires.length > 0) {
+                        alertPanel.classList.add("danger");
+                        alertTitle.innerText = "AMARAN TEKANAN LORI!";
+                        alertMsg.innerText = `Tayar bermasalah: ${lowPressureTires.join(", ")}`;
+                    } else {
+                        alertPanel.classList.remove("danger");
+                        alertTitle.innerText = "SISTEM NORMAL";
+                        alertMsg.innerText = `Semua tayar dalam julat selamat (${minLimit}-${maxLimit} PSI).`;
+                    }
+                }
+
+                const lastUpdate = document.getElementById("last-update");
+                if (lastUpdate) {
+                    const now = new Date();
+                    lastUpdate.innerText = now.toLocaleTimeString();
+                }
+            }
+        } catch (e) {
+            console.error("Ralat parse data:", e);
+        }
+    }
+});
