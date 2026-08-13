@@ -23,53 +23,49 @@ const tireMap = {
 
 let lowPressureTires = [];
 
+// Tetapan Had Awal
 let minLimit = 90;
 let maxLimit = 120;
 
-// Minta izin kebenaran audio/getar pelayar semasa mula-mula klik skrin
+// Aktifkan Audio Context apabila pengguna sentuh skrin buat kali pertama
 document.addEventListener("click", () => {
-    if (window.AudioContext || window.webkitAudioContext) {
+    try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
-    }
+    } catch (e) {}
 }, { once: true });
 
 // ==========================================
-// 3. FUNGSI NOTIFIKASI TEPAT & KONSISTEN
+// 3. FUNGSI POPUP DALAM WEB APP (GAYA WHATSAPP)
 // ==========================================
-function showWhatsAppNotification(title, message) {
-    // 1. Getaran peranti (Vibrate API)
+function showAppPopupNotification(title, message) {
+    // Getaran peranti (vibrate)
     if ("vibrate" in navigator) {
         try {
-            navigator.vibrate([300, 100, 300, 100, 300]);
-        } catch (e) {
-            console.log("Getaran disekat:", e);
-        }
+            navigator.vibrate([300, 100, 300]);
+        } catch (e) {}
     }
 
-    // 2. Bunyi Amaran (Web Audio API - Bip Kuat)
+    // Bunyi amaran pendek
     try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const audioCtx = new AudioContext();
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
 
         oscillator.type = "sine";
-        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Frekuensi tinggi untuk amaran
-        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
 
         oscillator.connect(gainNode);
         gainNode.connect(audioCtx.destination);
 
         oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.4);
-    } catch (e) {
-        console.log("Audio disekat pelayar:", e);
-    }
+        oscillator.stop(audioCtx.currentTime + 0.3);
+    } catch (e) {}
 
-    // 3. Paparkan Kotak Popup UI Terapung di Skrin Web
+    // Paparkan kotak elemen HTML #whatsapp-notification-popup
     const popup = document.getElementById("whatsapp-notification-popup");
     const titleEl = document.getElementById("wa-notif-title");
     const msgEl = document.getElementById("wa-notif-msg");
@@ -79,7 +75,6 @@ function showWhatsAppNotification(title, message) {
         msgEl.innerText = message;
         popup.classList.add("show");
 
-        // Hilangkan automatik selepas 5 saat
         setTimeout(() => {
             popup.classList.remove("show");
         }, 5000);
@@ -101,15 +96,19 @@ client.on("message", (topic, message) => {
     const msgString = message.toString();
     console.log("Data Terima:", topic, msgString);
 
+    // Auto-Sync Had Min & Max dari ESP32
     if (topic === "lori/VKT8821/config/minPSI") {
         minLimit = parseInt(msgString);
+        console.log("Had Min Dikemaskini:", minLimit);
         return;
     }
     if (topic === "lori/VKT8821/config/maxPSI") {
         maxLimit = parseInt(msgString);
+        console.log("Had Max Dikemaskini:", maxLimit);
         return;
     }
 
+    // Tangkap data bacaan tayar
     if (tireMap[topic]) {
         try {
             let psiValue;
@@ -129,14 +128,15 @@ client.on("message", (topic, message) => {
             if (psiElement && boxElement) {
                 psiElement.innerHTML = `${psiValue} <small>PSI</small>`;
 
+                // Semak amaran ikut had semasa
                 if (psiValue < minLimit || psiValue > maxLimit) {
                     boxElement.classList.add("warning");
                     
                     if (!lowPressureTires.includes(target.name)) {
                         lowPressureTires.push(target.name);
                         
-                        // Cetuskan popup gaya WhatsApp, bunyi & getar
-                        showWhatsAppNotification(
+                        // Panggil popup dalam web app sahaja
+                        showAppPopupNotification(
                             "AMARAN TPMS LORI", 
                             `Tayar ${target.name} bermasalah! Bacaan: ${psiValue} PSI (Had: ${minLimit}-${maxLimit}).`
                         );
@@ -146,6 +146,7 @@ client.on("message", (topic, message) => {
                     lowPressureTires = lowPressureTires.filter(t => t !== target.name);
                 }
 
+                // Kemaskini Panel Diagnostik Bawah
                 const alertPanel = document.getElementById("alert-panel");
                 const alertTitle = document.getElementById("alert-title");
                 const alertMsg = document.getElementById("alert-msg");
@@ -169,7 +170,7 @@ client.on("message", (topic, message) => {
                 }
             }
         } catch (e) {
-            console.error("Ralat memproses data tayar:", e);
+            console.error("Ralat parse data:", e);
         }
     }
 });
