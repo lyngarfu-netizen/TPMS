@@ -25,11 +25,10 @@ const tireMap = {
 const tireReadings = {}; 
 const currentTireStatus = {}; 
 
-// Tetapan Had Awal (Dipaksa jadi Number)
+// Tetapan Had Awal (Number)
 let minLimit = 90;
 let maxLimit = 120;
 
-// Kemaskini paparan had keselamatan UI
 function updateSafetyLabels() {
     const optimalPsiEl = document.getElementById("optimal-psi-label"); 
     const minPsiEl = document.getElementById("min-psi-label");         
@@ -108,7 +107,7 @@ function showAppPopupNotification(title, message) {
 }
 
 // ==========================================
-// 4. FUNGSI PENILAIAN SEMULA SEMUA TAYAR
+// 4. PENILAIAN SEMULA TAYAR & ALERT PANEL
 // ==========================================
 function reevaluateAllTires() {
     Object.keys(tireMap).forEach(topic => {
@@ -118,7 +117,6 @@ function reevaluateAllTires() {
         if (psiValue !== undefined) {
             const boxElement = document.getElementById(target.boxId);
             
-            // PAKSA SEMUA JADI NOMBOR SEBELUM BANDING
             const currentPsi = Number(psiValue);
             const currentMin = Number(minLimit);
             const currentMax = Number(maxLimit);
@@ -162,7 +160,7 @@ function updateAlertPanel() {
 }
 
 // ==========================================
-// 5. MQTT EVENT LISTENERS
+// 5. MQTT EVENTS
 // ==========================================
 client.on("connect", () => {
     console.log("MQTT Connected!");
@@ -184,7 +182,7 @@ client.on("message", (topic, message) => {
     if (topic === "lori/VKT8821/config/minPSI") {
         const parsedMin = Number(msgString);
         if (!isNaN(parsedMin) && parsedMin > 0) {
-            minLimit = parsedMin; // Simpan sebagai Nombor
+            minLimit = parsedMin;
             console.log("[CONFIG] Had Min Berjaya Ditukar:", minLimit);
             updateSafetyLabels();
             reevaluateAllTires();
@@ -196,7 +194,7 @@ client.on("message", (topic, message) => {
     if (topic === "lori/VKT8821/config/maxPSI") {
         const parsedMax = Number(msgString);
         if (!isNaN(parsedMax) && parsedMax > 0) {
-            maxLimit = parsedMax; // Simpan sebagai Nombor
+            maxLimit = parsedMax;
             console.log("[CONFIG] Had Max Berjaya Ditukar:", maxLimit);
             updateSafetyLabels();
             reevaluateAllTires();
@@ -213,16 +211,13 @@ client.on("message", (topic, message) => {
                 const data = JSON.parse(msgString);
                 psiValue = Number(data.psi ?? data.value ?? 0);
             } else {
-                psiValue = Number(msgString); // PAKSA CONVERT JADI NOMBOR
+                psiValue = Number(msgString);
             }
 
-            if (isNaN(psiValue)) {
-                console.warn("Format PSI tidak sah:", msgString);
-                return;
-            }
+            if (isNaN(psiValue)) return;
 
             const target = tireMap[topic];
-            tireReadings[target.name] = psiValue; // Simpan bacaan terkini
+            tireReadings[target.name] = psiValue;
 
             const psiElement = document.getElementById(target.psiId);
             const boxElement = document.getElementById(target.boxId);
@@ -230,7 +225,6 @@ client.on("message", (topic, message) => {
             if (psiElement && boxElement) {
                 psiElement.innerHTML = `${psiValue} <small>PSI</small>`;
 
-                // PAKSAAN NOMBOR UNTUK PEMBANDINGAN SAMA SKALAR
                 const currentPsi = Number(psiValue);
                 const currentMin = Number(minLimit);
                 const currentMax = Number(maxLimit);
@@ -238,8 +232,6 @@ client.on("message", (topic, message) => {
                 const isUnderMin = currentPsi < currentMin;
                 const isOverMax = currentPsi > currentMax;
                 const isWarning = isUnderMin || isOverMax;
-
-                console.log(`[SEMAK] ${target.name} | PSI: ${currentPsi} | Min: ${currentMin} | Max: ${currentMax} | Amar: ${isWarning}`);
 
                 if (isWarning) {
                     boxElement.classList.add("warning");
