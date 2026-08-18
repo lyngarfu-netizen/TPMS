@@ -1,345 +1,172 @@
 <!DOCTYPE html>
-
 <html lang="ms">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Dashboard TPMS Kenderaan Berat</title>
-
     <!-- Google Fonts & Font Awesome Icons -->
-
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <!-- MQTT Client Library -->
-
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-
     <link rel="stylesheet" href="style.css">
 
-
-
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-
-<script>
-
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-
-  OneSignalDeferred.push(async function(OneSignal) {
-
-    await OneSignal.init({
-
-      appId: "4c893bd9-4907-4c45-8977-c76fab5c51b9",
-
-    });
-
-  });
-
-</script>
-
-   
-
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "4c893bd9-4907-4c45-8977-c76fab5c51b9",
+        });
+      });
+    </script>
 </head>
-
 <body>
 
-
-
     <!-- Header Navigation -->
-
     <header>
-
         <div class="logo">
-
             <i class="fa-solid fa-truck-monster"></i> TPMS MONITORING
-
         </div>
-
         <div class="status-badge" id="connection-status">
-
             <div class="pulse-dot"></div> CONNECTING...
-
         </div>
-
         <button class="btn-logout" onclick="logoutTPMS()"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
-
     </header>
 
-
-
     <!-- Main Grid Container -->
-
     <div class="container">
-
-       
-
+        
         <!-- Panel Kiri: Info Kenderaan -->
-
         <div class="card">
-
             <div class="card-title"><i class="fa-solid fa-truck-front"></i> Info Kenderaan</div>
-
-           
-
+            
             <div class="data-row">
-
                 <span class="data-label">No. Pendaftaran</span>
-
                 <span class="data-value highlight-cyan">VKT 8821</span>
-
             </div>
-
             <div class="data-row">
-
                 <span class="data-label">Isyarat IoT</span>
-
                 <span class="data-value signal-good"><i class="fa-solid fa-wifi"></i> -62 dBm</span>
-
             </div>
-
             <div class="data-row">
-
                 <span class="data-label">Purata Bateri</span>
-
                 <span class="data-value">88%</span>
-
             </div>
-
             <div class="data-row">
-
                 <span class="data-label">Kemaskini Terakhir</span>
-
                 <span class="data-value" id="last-update">Baru Sahaja</span>
-
             </div>
-
-
 
             <button class="btn-action" onclick="window.location.reload()"><i class="fa-solid fa-rotate-right"></i> REFRESH DASHBOARD</button>
-
         </div>
-
-
 
         <!-- Panel Tengah: Visualizer Lori & 6 Tayar -->
-
         <div class="card truck-visualizer">
-
             <!-- Diagram SVG Lori -->
-
             <svg class="truck-svg" viewBox="0 0 200 400" fill="none" xmlns="http://www.w3.org/2000/svg">
-
                 <!-- Head Lori -->
-
                 <path d="M 40 100 Q 40 30 100 30 Q 160 30 160 100 L 160 140 L 40 140 Z" fill="#161f30" stroke="#00f0ff" stroke-width="3"/>
-
                 <!-- Cermin Depan -->
-
                 <path d="M 55 90 Q 55 50 100 50 Q 145 50 145 90 Z" fill="#0d3b4c" stroke="#00f0ff" stroke-width="1.5"/>
-
                 <!-- Cermin Sisi Kiri & Kanan -->
-
                 <rect x="25" y="70" width="10" height="20" rx="3" fill="#00f0ff"/>
-
                 <rect x="165" y="70" width="10" height="20" rx="3" fill="#00f0ff"/>
-
                 <!-- Badan Belakang (Trailer Body) -->
-
                 <rect x="40" y="150" width="120" height="230" rx="8" fill="#101520" stroke="#2a384e" stroke-width="3"/>
-
                 <line x1="100" y1="150" x2="100" y2="380" stroke="#2a384e" stroke-dasharray="4" />
-
             </svg>
 
-
-
             <!-- Layer Node Tayar (6 Tayar) -->
-
             <div class="tire-overlay">
-
                 <!-- Depan Kiri -->
-
                 <div class="tire-node node-fl1">
-
                     <div class="tire-box" id="box-fl1">
-
                         <div class="label">Depan Kiri (FL1)</div>
-
                         <div class="psi" id="psi-fl1">-- <small>PSI</small></div>
-
                     </div>
-
                 </div>
-
-
 
                 <!-- Depan Kanan -->
-
                 <div class="tire-node node-fr1">
-
                     <div class="tire-box" id="box-fr1">
-
                         <div class="label">Depan Kanan (FR1)</div>
-
                         <div class="psi" id="psi-fr1">-- <small>PSI</small></div>
-
                     </div>
-
                 </div>
-
-
 
                 <!-- Belakang Kiri 1 -->
-
                 <div class="tire-node node-bl1">
-
                     <div class="tire-box" id="box-bl1">
-
                         <div class="label">B. Kiri 1 (BL1)</div>
-
                         <div class="psi" id="psi-bl1">-- <small>PSI</small></div>
-
                     </div>
-
                 </div>
-
-
 
                 <!-- Belakang Kanan 1 -->
-
                 <div class="tire-node node-br1">
-
                     <div class="tire-box" id="box-br1">
-
                         <div class="label">B. Kanan 1 (BR1)</div>
-
                         <div class="psi" id="psi-br1">-- <small>PSI</small></div>
-
                     </div>
-
                 </div>
-
-
 
                 <!-- Belakang Kiri 2 -->
-
                 <div class="tire-node node-bl2">
-
                     <div class="tire-box" id="box-bl2">
-
                         <div class="label">B. Kiri 2 (BL2)</div>
-
                         <div class="psi" id="psi-bl2">-- <small>PSI</small></div>
-
                     </div>
-
                 </div>
-
-
 
                 <!-- Belakang Kanan 2 -->
-
                 <div class="tire-node node-br2">
-
                     <div class="tire-box" id="box-br2">
-
                         <div class="label">B. Kanan 2 (BR2)</div>
-
                         <div class="psi" id="psi-br2">-- <small>PSI</small></div>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
-
-
 
         <!-- Panel Kanan: Status Diagnostic -->
-
         <div class="card">
-
             <div class="card-title"><i class="fa-solid fa-triangle-exclamation"></i> Status Diagnostic</div>
-
-           
-
+            
             <!-- Alert Panel -->
-
             <div class="alert-box" id="alert-panel">
-
                 <i class="fa-solid fa-shield-halved alert-icon"></i>
-
                 <div class="alert-text">
-
                     <h4 id="alert-title">SISTEM NORMAL</h4>
-
                     <p id="alert-msg">Semua 6 tayar berada dalam julat selamat.</p>
-
                 </div>
-
             </div>
-
-
 
             <div class="card-title card-title-sub"><i class="fa-solid fa-sliders"></i> Had Keselamatan Lori</div>
-
-           
-
+            
             <div class="data-row">
-
                 <span class="data-label">PSI Optimal (Beban)</span>
-
                 <span class="data-value highlight-cyan">90 - 120 PSI</span>
-
             </div>
-
             <div class="data-row">
-
                 <span class="data-label">PSI Min / Bahaya</span>
-
                 <span class="data-value highlight-red">&lt; 90 PSI</span>
-
             </div>
-
-
 
             <button class="btn-action btn-orange"><i class="fa-solid fa-wrench"></i> CARI SERVIS TAYAR LORI</button>
-
         </div>
 
-
-
     </div>
-
-
 
     <!-- Custom WhatsApp Notification Popup -->
-
-<div id="whatsapp-notification-popup">
-
-    <div class="wa-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-
-    <div class="wa-content">
-
-        <span class="wa-title" id="wa-notif-title">AMARAN TPMS</span>
-
-        <span class="wa-message" id="wa-notif-msg">Tayar bermasalah dikesan.</span>
-
+    <div id="whatsapp-notification-popup">
+        <div class="wa-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="wa-content">
+            <span class="wa-title" id="wa-notif-title">AMARAN TPMS</span>
+            <span class="wa-message" id="wa-notif-msg">Tayar bermasalah dikesan.</span>
+        </div>
     </div>
 
-</div>
-
-
-
     <script src="script.js"></script>
-
 </body>
-
 </html>
