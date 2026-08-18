@@ -17,7 +17,7 @@ function logoutTPMS() {
 // 2. HAD KESELAMATAN
 // ==========================================
 
-const MIN_SAFETY_LIMIT = 90;
+const MIN_SAFETY_LIMIT = 80;
 const MAX_SAFETY_LIMIT = 120;
 
 
@@ -35,7 +35,25 @@ const client = mqtt.connect(MQTT_BROKER);
 
 
 // ==========================================
-// 4. FUNGSI UPDATE STATUS TAYAR
+// 4. FUNGSI UPDATE PAPARAN HAD KESELAMATAN (DINAMIK)
+// ==========================================
+
+function updateSafetyLimitsDisplay() {
+    const optimalText = document.getElementById("psi-optimal-text");
+    const minText = document.getElementById("psi-min-text");
+
+    if (optimalText) {
+        optimalText.innerText = `${MIN_SAFETY_LIMIT} - ${MAX_SAFETY_LIMIT} PSI`;
+    }
+
+    if (minText) {
+        minText.innerText = `< ${MIN_SAFETY_LIMIT} PSI`;
+    }
+}
+
+
+// ==========================================
+// 5. FUNGSI UPDATE STATUS TAYAR
 // ==========================================
 
 function checkAndUpdateTire(
@@ -141,7 +159,6 @@ function checkAndUpdateTire(
 
     // ==========================================
     // JIKA PSI TAK SELAMAT
-    // < 90 ATAU > 120
     // ==========================================
 
     if (isWarning) {
@@ -190,7 +207,6 @@ function checkAndUpdateTire(
 
     // ==========================================
     // JIKA PSI NORMAL
-    // 90 - 120
     // ==========================================
 
     else {
@@ -245,7 +261,7 @@ function checkAndUpdateTire(
 
 
 // ==========================================
-// 5. UPDATE ALERT PANEL
+// 6. UPDATE ALERT PANEL
 // ==========================================
 
 function updateAlertPanel() {
@@ -362,7 +378,7 @@ function updateAlertPanel() {
 
 
 // ==========================================
-// 6. MQTT CONNECT
+// 7. MQTT CONNECT
 // ==========================================
 
 client.on("connect", () => {
@@ -430,7 +446,7 @@ client.on("connect", () => {
 
 
 // ==========================================
-// 7. MQTT ERROR
+// 8. MQTT ERROR
 // ==========================================
 
 client.on("error", (error) => {
@@ -458,7 +474,7 @@ client.on("error", (error) => {
 
 
 // ==========================================
-// 8. MQTT DISCONNECT
+// 9. MQTT DISCONNECT
 // ==========================================
 
 client.on("close", () => {
@@ -485,14 +501,10 @@ client.on("close", () => {
 
 
 // ==========================================
-// 9. MQTT MESSAGE RECEIVER
+// 10. MQTT MESSAGE RECEIVER
 // ==========================================
 
 client.on("message", (topic, message) => {
-
-    // ==========================================
-    // DAPATKAN DATA
-    // ==========================================
 
     const msgString =
         message.toString().trim();
@@ -520,24 +532,7 @@ client.on("message", (topic, message) => {
     let psiValue = NaN;
 
 
-    // ==========================================
     // JIKA DATA JSON
-    // ==========================================
-
-    /*
-        Contoh:
-
-        {"psi":70}
-
-        atau
-
-        {"value":70}
-
-        atau
-
-        {"pressure":70}
-    */
-
     if (
         msgString.startsWith("{")
     ) {
@@ -568,23 +563,7 @@ client.on("message", (topic, message) => {
 
     }
 
-
-    // ==========================================
     // JIKA DATA NOMBOR BIASA
-    // ==========================================
-
-    /*
-        Contoh:
-
-        70
-
-        72
-
-        97
-
-        108
-    */
-
     else {
 
         psiValue =
@@ -593,10 +572,7 @@ client.on("message", (topic, message) => {
     }
 
 
-    // ==========================================
     // CHECK INVALID DATA
-    // ==========================================
-
     if (
         isNaN(psiValue)
     ) {
@@ -610,30 +586,14 @@ client.on("message", (topic, message) => {
     }
 
 
-    // ==========================================
     // DEBUG PSI
-    // ==========================================
-
     console.log(
         "PSI VALUE RECEIVED:",
         psiValue
     );
 
-    console.log(
-        "MIN LIMIT:",
-        MIN_SAFETY_LIMIT
-    );
 
-    console.log(
-        "MAX LIMIT:",
-        MAX_SAFETY_LIMIT
-    );
-
-
-    // ==========================================
     // LOW PRESSURE CHECK
-    // ==========================================
-
     if (
         psiValue < MIN_SAFETY_LIMIT
     ) {
@@ -647,10 +607,7 @@ client.on("message", (topic, message) => {
     }
 
 
-    // ==========================================
     // HIGH PRESSURE CHECK
-    // ==========================================
-
     if (
         psiValue > MAX_SAFETY_LIMIT
     ) {
@@ -664,10 +621,7 @@ client.on("message", (topic, message) => {
     }
 
 
-    // ==========================================
-    // PADANKAN TOPIC FL1
-    // ==========================================
-
+    // PADANKAN TOPIC DENGAN TAYAR
     if (
         cleanTopic.includes("fl1")
     ) {
@@ -680,11 +634,6 @@ client.on("message", (topic, message) => {
         );
 
     }
-
-
-    // ==========================================
-    // FR1
-    // ==========================================
 
     else if (
         cleanTopic.includes("fr1")
@@ -699,11 +648,6 @@ client.on("message", (topic, message) => {
 
     }
 
-
-    // ==========================================
-    // BL1
-    // ==========================================
-
     else if (
         cleanTopic.includes("bl1")
     ) {
@@ -716,11 +660,6 @@ client.on("message", (topic, message) => {
         );
 
     }
-
-
-    // ==========================================
-    // BR1
-    // ==========================================
 
     else if (
         cleanTopic.includes("br1")
@@ -735,11 +674,6 @@ client.on("message", (topic, message) => {
 
     }
 
-
-    // ==========================================
-    // BL2
-    // ==========================================
-
     else if (
         cleanTopic.includes("bl2")
     ) {
@@ -752,11 +686,6 @@ client.on("message", (topic, message) => {
         );
 
     }
-
-
-    // ==========================================
-    // BR2
-    // ==========================================
 
     else if (
         cleanTopic.includes("br2")
@@ -772,10 +701,7 @@ client.on("message", (topic, message) => {
     }
 
 
-    // ==========================================
-    // LAST UPDATE
-    // ==========================================
-
+    // LAST UPDATE TIME
     const lastUpdate =
         document.getElementById(
             "last-update"
@@ -797,7 +723,7 @@ client.on("message", (topic, message) => {
 
 
 // ==========================================
-// 10. INITIAL STATUS
+// 11. INITIAL STATUS
 // ==========================================
 
 document.addEventListener(
@@ -812,6 +738,8 @@ document.addEventListener(
             `Safety Range: ${MIN_SAFETY_LIMIT}-${MAX_SAFETY_LIMIT} PSI`
         );
 
+        // Kemaskini teks had keselamatan lori (PSI Optimal & PSI Min)
+        updateSafetyLimitsDisplay();
 
         // Pastikan alert panel mula-mula normal
         updateAlertPanel();
