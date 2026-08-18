@@ -7,98 +7,55 @@ function logoutTPMS() {
 }
 
 // ==========================================
-// 2. SAMBUNGAN MQTT BROKER & PEMETAAN TAYAR
+// 2. HAD KESELAMATAN (MIN: 90, MAX: 120)
 // ==========================================
+const MIN_SAFETY_LIMIT = 90;
+const MAX_SAFETY_LIMIT = 120;
+const currentTireStatus = {}; 
+
 const MQTT_BROKER = "wss://broker.hivemq.com:8884/mqtt";
 const client = mqtt.connect(MQTT_BROKER);
 
-const tireMap = {
-    "lori/VKT8821/tayar/fl1": { psiId: "psi-fl1", boxId: "box-fl1", name: "Depan Kiri (FL1)" },
-    "lori/VKT8821/tayar/fr1": { psiId: "psi-fr1", boxId: "box-fr1", name: "Depan Kanan (FR1)" },
-    "lori/VKT8821/tayar/bl1": { psiId: "psi-bl1", boxId: "box-bl1", name: "B. Kiri 1 (BL1)" },
-    "lori/VKT8821/tayar/br1": { psiId: "psi-br1", boxId: "box-br1", name: "B. Kanan 1 (BR1)" },
-    "lori/VKT8821/tayar/bl2": { psiId: "psi-bl2", boxId: "box-bl2", name: "B. Kiri 2 (BL2)" },
-    "lori/VKT8821/tayar/br2": { psiId: "psi-br2", boxId: "box-br2", name: "B. Kanan 2 (BR2)" }
-};
-
-const currentTireStatus = {}; 
-
-// HAD KESELAMATAN TETAP (HARDCODED HAD MIN = 90 & MAX = 120)
-const MIN_SAFETY_LIMIT = 90;
-const MAX_SAFETY_LIMIT = 120;
-
-// Aktifkan Audio Context
-document.addEventListener("click", () => {
-    try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-    } catch (e) {}
-}, { once: true });
-
 // ==========================================
-// 3. FUNGSI POPUP & ONESIGNAL PUSH API
+// 3. FUNGSI SEMAK AMARAN & TUKAR WARNA RED
 // ==========================================
-function showAppPopupNotification(title, message) {
-    if ("vibrate" in navigator) {
-        try { navigator.vibrate([300, 100, 300]); } catch (e) {}
+function checkAndUpdateTire(boxId, psiId, psiValue, tireName) {
+    const psiElement = document.getElementById(psiId);
+    const boxElement = document.getElementById(boxId);
+
+    if (!psiElement || !boxElement) return;
+
+    // Papar Nilai PSI
+    psiElement.innerHTML = `${Math.round(psiValue)} <small>PSI</small>`;
+
+    // Semak Had Amaran (Di bawah 90 PSI atau Atas 120 PSI)
+    const isUnderMin = psiValue < MIN_SAFETY_LIMIT;
+    const isOverMax = psiValue > MAX_SAFETY_LIMIT;
+    const isWarning = isUnderMin || isOverMax;
+
+    if (isWarning) {
+        // Paksa Style Merah Terus Melalui Inline Style (Tanda Kurang Kebergantungan Pada CSS Class)
+        boxElement.style.borderColor = "#ff3366";
+        boxElement.style.backgroundColor = "rgba(255, 51, 102, 0.35)";
+        boxElement.style.boxShadow = "0 0 20px #ff3366";
+        psiElement.style.color = "#ff3366";
+        
+        boxElement.classList.add("warning");
+        currentTireStatus[tireName] = true;
+    } else {
+        // Reset Balik Ke Warna Biru/Cyan
+        boxElement.style.borderColor = "#00f0ff";
+        boxElement.style.backgroundColor = "rgba(16, 21, 32, 0.95)";
+        boxElement.style.boxShadow = "0 0 10px rgba(0, 240, 255, 0.2)";
+        psiElement.style.color = "#00f0ff";
+
+        boxElement.classList.remove("warning");
+        currentTireStatus[tireName] = false;
     }
 
-    try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-
-        oscillator.type = "sine";
-        oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
-        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.3);
-    } catch (e) {}
-
-    const popup = document.getElementById("whatsapp-notification-popup");
-    const titleEl = document.getElementById("wa-notif-title");
-    const msgEl = document.getElementById("wa-notif-msg");
-
-    if (popup && titleEl && msgEl) {
-        titleEl.innerText = title;
-        msgEl.innerText = message;
-        popup.classList.add("show");
-
-        setTimeout(() => {
-            popup.classList.remove("show");
-        }, 5000);
-    }
-
-    const ONESIGNAL_APP_ID = "4c893bd9-4907-4c45-8977-c76fab5c51b9";
-    const ONESIGNAL_REST_API_KEY = "os_v2_app_jsetxwkja5gelclxy5x2wxcrxfi3gbdgxyqeihu5v52leffnn2tpxnq6ccwa3piddsoiwutic55c5tqvz6eqeewkfcxukoex5dztorq";
-
-    fetch("https://onesignal.com/api/v1/notifications", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json; charset=utf-8",
-            "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`
-        },
-        body: JSON.stringify({
-            app_id: ONESIGNAL_APP_ID,
-            included_segments: ["Total Subscriptions"],
-            headings: { "en": title },
-            contents: { "en": message }
-        })
-    })
-    .then(response => response.json())
-    .then(data => console.log("Notifikasi Berjaya Dihantar:", data))
-    .catch((error) => console.error("Ralat Hantar Notifikasi:", error));
+    updateAlertPanel();
 }
 
-// ==========================================
-// 4. KEMASKINI PANEL DIAGNOSTIK
-// ==========================================
 function updateAlertPanel() {
     const faultyTires = Object.keys(currentTireStatus).filter(name => currentTireStatus[name] === true);
     const alertPanel = document.getElementById("alert-panel");
@@ -107,11 +64,15 @@ function updateAlertPanel() {
 
     if (alertPanel && alertTitle && alertMsg) {
         if (faultyTires.length > 0) {
-            alertPanel.classList.add("danger");
+            alertPanel.style.backgroundColor = "rgba(255, 51, 102, 0.2)";
+            alertPanel.style.borderColor = "#ff3366";
+            alertPanel.style.color = "#ff3366";
             alertTitle.innerText = "AMARAN TEKANAN LORI!";
             alertMsg.innerText = `Tayar bermasalah: ${faultyTires.join(", ")}`;
         } else {
-            alertPanel.classList.remove("danger");
+            alertPanel.style.backgroundColor = "rgba(0, 255, 136, 0.1)";
+            alertPanel.style.borderColor = "#00ff88";
+            alertPanel.style.color = "#00ff88";
             alertTitle.innerText = "SISTEM NORMAL";
             alertMsg.innerText = `Semua tayar dalam julat selamat (${MIN_SAFETY_LIMIT}-${MAX_SAFETY_LIMIT} PSI).`;
         }
@@ -119,7 +80,7 @@ function updateAlertPanel() {
 }
 
 // ==========================================
-// 5. MQTT EVENTS
+// 4. MQTT RECEIVER WITH TOPIC AUTO-MATCHING
 // ==========================================
 client.on("connect", () => {
     console.log("MQTT Connected!");
@@ -127,66 +88,42 @@ client.on("connect", () => {
     if (statusBox) {
         statusBox.innerHTML = '<div class="pulse-dot"></div> CONNECTED';
     }
-    
-    // Subscribe khusus kepada data tayar
-    client.subscribe("lori/VKT8821/tayar/#");
+    // Subscribe ke semua topik berkaitan lori VKT8821
+    client.subscribe("lori/VKT8821/#");
 });
 
 client.on("message", (topic, message) => {
     const msgString = message.toString().trim();
+    const cleanTopic = topic.toLowerCase(); // Convert ke huruf kecil untuk elak bug Case Sensitivity
 
-    if (tireMap[topic]) {
+    let psiValue = parseFloat(msgString);
+    if (msgString.startsWith("{")) {
         try {
-            let psiValue = 0;
+            const data = JSON.parse(msgString);
+            psiValue = parseFloat(data.psi ?? data.value ?? 0);
+        } catch(e) {}
+    }
 
-            if (msgString.startsWith("{")) {
-                const data = JSON.parse(msgString);
-                psiValue = parseFloat(data.psi ?? data.value ?? 0);
-            } else {
-                psiValue = parseFloat(msgString);
-            }
+    if (isNaN(psiValue)) return;
 
-            if (isNaN(psiValue)) return;
+    // Padankan Topik Secara Fleksibel
+    if (cleanTopic.includes("fl1")) {
+        checkAndUpdateTire("box-fl1", "psi-fl1", psiValue, "Depan Kiri (FL1)");
+    } else if (cleanTopic.includes("fr1")) {
+        checkAndUpdateTire("box-fr1", "psi-fr1", psiValue, "Depan Kanan (FR1)");
+    } else if (cleanTopic.includes("bl1")) {
+        checkAndUpdateTire("box-bl1", "psi-bl1", psiValue, "B. Kiri 1 (BL1)");
+    } else if (cleanTopic.includes("br1")) {
+        checkAndUpdateTire("box-br1", "psi-br1", psiValue, "B. Kanan 1 (BR1)");
+    } else if (cleanTopic.includes("bl2")) {
+        checkAndUpdateTire("box-bl2", "psi-bl2", psiValue, "B. Kiri 2 (BL2)");
+    } else if (cleanTopic.includes("br2")) {
+        checkAndUpdateTire("box-br2", "psi-br2", psiValue, "B. Kanan 2 (BR2)");
+    }
 
-            const target = tireMap[topic];
-            const psiElement = document.getElementById(target.psiId);
-            const boxElement = document.getElementById(target.boxId);
-
-            if (psiElement && boxElement) {
-                // Paparkan nilai PSI
-                psiElement.innerHTML = `${Math.round(psiValue)} <small>PSI</small>`;
-
-                // LOGIK SEMAKAN HAD AMARAN
-                const isUnderMin = psiValue < MIN_SAFETY_LIMIT;
-                const isOverMax = psiValue > MAX_SAFETY_LIMIT;
-                const isWarning = isUnderMin || isOverMax;
-
-                if (isWarning) {
-                    boxElement.classList.add("warning");
-                    
-                    if (!currentTireStatus[target.name]) {
-                        currentTireStatus[target.name] = true;
-                        const statusText = isUnderMin ? "TERLALU RENDAH" : "TERLALU TINGGI";
-                        showAppPopupNotification(
-                            "AMARAN TPMS LORI", 
-                            `Tayar ${target.name} ${statusText}! Bacaan: ${Math.round(psiValue)} PSI (Had: ${MIN_SAFETY_LIMIT}-${MAX_SAFETY_LIMIT}).`
-                        );
-                    }
-                } else {
-                    boxElement.classList.remove("warning");
-                    currentTireStatus[target.name] = false;
-                }
-
-                updateAlertPanel();
-
-                const lastUpdate = document.getElementById("last-update");
-                if (lastUpdate) {
-                    const now = new Date();
-                    lastUpdate.innerText = now.toLocaleTimeString();
-                }
-            }
-        } catch (e) {
-            console.error("Ralat parse data tayar:", e);
-        }
+    const lastUpdate = document.getElementById("last-update");
+    if (lastUpdate) {
+        const now = new Date();
+        lastUpdate.innerText = now.toLocaleTimeString();
     }
 });
