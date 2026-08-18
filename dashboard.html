@@ -138,7 +138,7 @@
                 <i class="fa-solid fa-shield-halved alert-icon"></i>
                 <div class="alert-text">
                     <h4 id="alert-title">SISTEM NORMAL</h4>
-                    <p id="alert-msg">Semua 6 tayar berada dalam julat selamat.</p>
+                    <p id="alert-msg">Semua tayar dalam julat selamat (80-120 PSI).</p>
                 </div>
             </div>
 
@@ -146,11 +146,13 @@
             
             <div class="data-row">
                 <span class="data-label">PSI Optimal (Beban)</span>
-                <span class="data-value highlight-cyan" id="psi-optimal-text">90 - 120 PSI</span>
+                <!-- Ditukar terus ke 80 - 120 PSI -->
+                <span class="data-value highlight-cyan" id="psi-optimal-text">80 - 120 PSI</span>
             </div>
             <div class="data-row">
                 <span class="data-label">PSI Min / Bahaya</span>
-                <span class="data-value highlight-red" id="psi-min-text">&lt; 90 PSI</span>
+                <!-- Ditukar terus ke < 80 PSI -->
+                <span class="data-value highlight-red" id="psi-min-text">&lt; 80 PSI</span>
             </div>
 
             <button class="btn-action btn-orange"><i class="fa-solid fa-wrench"></i> CARI SERVIS TAYAR LORI</button>
