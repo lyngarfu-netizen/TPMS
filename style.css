@@ -200,18 +200,6 @@ header {
     color: #00f0ff;
 }
 
-/* Kesan Amaran Jika PSI Bahaya (< 90 PSI) */
-.tire-box.warning {
-    border-color: #ff3366 !important;
-    background: rgba(255, 51, 102, 0.15) !important;
-    box-shadow: 0 0 15px rgba(255, 51, 102, 0.6) !important;
-    animation: blink 1s infinite alternate;
-}
-
-.tire-box.warning .psi {
-    color: #ff3366 !important;
-}
-
 @keyframes blink {
     from { opacity: 1; }
     to { opacity: 0.7; }
@@ -391,4 +379,19 @@ header {
         left: 10px;
         max-width: unset;
     }
+}
+
+/* ===================================================
+   8. KEKUATAN SPESIFISITI AMARAN (TANPA !IMPORTANT)
+   Diletakkan di paling bawah supaya mengatasi semua @media
+   =================================================== */
+.card.truck-visualizer .tire-overlay .tire-node .tire-box.warning {
+    border-color: #ff3366;
+    background: rgba(255, 51, 102, 0.25);
+    box-shadow: 0 0 15px rgba(255, 51, 102, 0.8);
+    animation: blink 1s infinite alternate;
+}
+
+.card.truck-visualizer .tire-overlay .tire-node .tire-box.warning .psi {
+    color: #ff3366;
 }
