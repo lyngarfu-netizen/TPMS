@@ -7,7 +7,7 @@ function logoutTPMS() {
 }
 
 // ==========================================
-// 2. TETAPAN UTAMA & DATA TAYAR
+// 2. SAMBUNGAN MQTT BROKER & PEMETAAN TAYAR
 // ==========================================
 const MQTT_BROKER = "wss://broker.hivemq.com:8884/mqtt";
 const client = mqtt.connect(MQTT_BROKER);
@@ -21,15 +21,15 @@ const tireMap = {
     "lori/VKT8821/tayar/br2": { psiId: "psi-br2", boxId: "box-br2", name: "B. Kanan 2 (BR2)" }
 };
 
-// Simpan bacaan PSI terkini & status amaran setiap tayar
-const tireReadings = {}; // Simpan nilai PSI semasa (cth: {"Depan Kiri (FL1)": 85})
-const currentTireStatus = {}; // Simpan status masalah (true/false)
+// Simpan bacaan & status tayar
+const tireReadings = {}; 
+const currentTireStatus = {}; 
 
-// Had asal (Nilai lalai)
+// Tetapan Had Awal (Dipaksa jadi Number)
 let minLimit = 90;
 let maxLimit = 120;
 
-// Kemaskini label keselamatan pada UI
+// Kemaskini paparan had keselamatan UI
 function updateSafetyLabels() {
     const optimalPsiEl = document.getElementById("optimal-psi-label"); 
     const minPsiEl = document.getElementById("min-psi-label");         
@@ -108,26 +108,8 @@ function showAppPopupNotification(title, message) {
 }
 
 // ==========================================
-// 4. FUNGSI UNTUK USER HANTAR HAD BARU (PUBLISH KE MQTT)
+// 4. FUNGSI PENILAIAN SEMULA SEMUA TAYAR
 // ==========================================
-// Panggil fungsi ini apabila user tekan butang "Simpan Tetapan Had" di UI
-function updateLimitsFromUser(newMin, newMax) {
-    const minVal = parseInt(newMin, 10);
-    const maxVal = parseInt(newMax, 10);
-
-    if (isNaN(minVal) || isNaN(maxVal) || minVal >= maxVal) {
-        alert("Sila masukkan nilai had PSI yang sah! Had Min mesti lebih kecil dari Had Max.");
-        return;
-    }
-
-    // Publish ke MQTT Broker supaya ESP32 & peranti lain terima tetapan baru
-    client.publish("lori/VKT8821/config/minPSI", minVal.toString(), { retain: true });
-    client.publish("lori/VKT8821/config/maxPSI", maxVal.toString(), { retain: true });
-
-    console.log(`[USER UPDATE] Hantar Had Baru: Min=${minVal}, Max=${maxVal}`);
-}
-
-// Fungsi untuk semak semula semua tayar bila limit bertukar
 function reevaluateAllTires() {
     Object.keys(tireMap).forEach(topic => {
         const target = tireMap[topic];
@@ -135,8 +117,14 @@ function reevaluateAllTires() {
 
         if (psiValue !== undefined) {
             const boxElement = document.getElementById(target.boxId);
-            const isUnderMin = psiValue < minLimit;
-            const isOverMax = psiValue > maxLimit;
+            
+            // PAKSA SEMUA JADI NOMBOR SEBELUM BANDING
+            const currentPsi = Number(psiValue);
+            const currentMin = Number(minLimit);
+            const currentMax = Number(maxLimit);
+
+            const isUnderMin = currentPsi < currentMin;
+            const isOverMax = currentPsi > currentMax;
             const isWarning = isUnderMin || isOverMax;
 
             if (boxElement) {
@@ -151,7 +139,6 @@ function reevaluateAllTires() {
         }
     });
 
-    // Kemaskini panel diagnostik bawah
     updateAlertPanel();
 }
 
@@ -175,7 +162,7 @@ function updateAlertPanel() {
 }
 
 // ==========================================
-// 5. LOGIK SAMBUNGAN MQTT & DATA RECEIVE
+// 5. MQTT EVENT LISTENERS
 // ==========================================
 client.on("connect", () => {
     console.log("MQTT Connected!");
@@ -193,26 +180,26 @@ client.on("connect", () => {
 client.on("message", (topic, message) => {
     const msgString = message.toString().trim();
 
-    // 1. TERIMA TETAPAN MIN PSI (Daripada App User atau ESP32)
+    // 1. TERIMA TETAPAN MIN PSI
     if (topic === "lori/VKT8821/config/minPSI") {
-        const parsedMin = parseInt(msgString, 10);
+        const parsedMin = Number(msgString);
         if (!isNaN(parsedMin) && parsedMin > 0) {
-            minLimit = parsedMin;
-            console.log("Had Min Diberkemaskini:", minLimit);
+            minLimit = parsedMin; // Simpan sebagai Nombor
+            console.log("[CONFIG] Had Min Berjaya Ditukar:", minLimit);
             updateSafetyLabels();
-            reevaluateAllTires(); // Semak semula tayar guna limit baru!
+            reevaluateAllTires();
         }
         return;
     }
 
-    // 2. TERIMA TETAPAN MAX PSI (Daripada App User atau ESP32)
+    // 2. TERIMA TETAPAN MAX PSI
     if (topic === "lori/VKT8821/config/maxPSI") {
-        const parsedMax = parseInt(msgString, 10);
+        const parsedMax = Number(msgString);
         if (!isNaN(parsedMax) && parsedMax > 0) {
-            maxLimit = parsedMax;
-            console.log("Had Max Diberkemaskini:", maxLimit);
+            maxLimit = parsedMax; // Simpan sebagai Nombor
+            console.log("[CONFIG] Had Max Berjaya Ditukar:", maxLimit);
             updateSafetyLabels();
-            reevaluateAllTires(); // Semak semula tayar guna limit baru!
+            reevaluateAllTires();
         }
         return;
     }
@@ -220,19 +207,22 @@ client.on("message", (topic, message) => {
     // 3. TERIMA BACAAN TAYAR REAL-TIME
     if (tireMap[topic]) {
         try {
-            let psiValue = Number(msgString);
+            let psiValue = 0;
 
             if (msgString.startsWith("{")) {
                 const data = JSON.parse(msgString);
                 psiValue = Number(data.psi ?? data.value ?? 0);
+            } else {
+                psiValue = Number(msgString); // PAKSA CONVERT JADI NOMBOR
             }
 
-            if (isNaN(psiValue)) return;
+            if (isNaN(psiValue)) {
+                console.warn("Format PSI tidak sah:", msgString);
+                return;
+            }
 
             const target = tireMap[topic];
-            
-            // Simpan bacaan terkini dalam memori
-            tireReadings[target.name] = psiValue;
+            tireReadings[target.name] = psiValue; // Simpan bacaan terkini
 
             const psiElement = document.getElementById(target.psiId);
             const boxElement = document.getElementById(target.boxId);
@@ -240,21 +230,26 @@ client.on("message", (topic, message) => {
             if (psiElement && boxElement) {
                 psiElement.innerHTML = `${psiValue} <small>PSI</small>`;
 
-                // Semak amaran (Bawah min ATAU Atas max)
-                const isUnderMin = psiValue < minLimit;
-                const isOverMax = psiValue > maxLimit;
+                // PAKSAAN NOMBOR UNTUK PEMBANDINGAN SAMA SKALAR
+                const currentPsi = Number(psiValue);
+                const currentMin = Number(minLimit);
+                const currentMax = Number(maxLimit);
+
+                const isUnderMin = currentPsi < currentMin;
+                const isOverMax = currentPsi > currentMax;
                 const isWarning = isUnderMin || isOverMax;
+
+                console.log(`[SEMAK] ${target.name} | PSI: ${currentPsi} | Min: ${currentMin} | Max: ${currentMax} | Amar: ${isWarning}`);
 
                 if (isWarning) {
                     boxElement.classList.add("warning");
                     
-                    // Notifikasi jika tayar baru masuk status merah
                     if (!currentTireStatus[target.name]) {
                         currentTireStatus[target.name] = true;
                         const statusText = isUnderMin ? "TERLALU RENDAH" : "TERLALU TINGGI";
                         showAppPopupNotification(
                             "AMARAN TPMS LORI", 
-                            `Tayar ${target.name} ${statusText}! Bacaan: ${psiValue} PSI (Had: ${minLimit}-${maxLimit}).`
+                            `Tayar ${target.name} ${statusText}! Bacaan: ${currentPsi} PSI (Had: ${currentMin}-${currentMax}).`
                         );
                     }
                 } else {
