@@ -21,21 +21,11 @@ const tireMap = {
     "lori/VKT8821/tayar/br2": { psiId: "psi-br2", boxId: "box-br2", name: "B. Kanan 2 (BR2)" }
 };
 
-// Simpan bacaan & status tayar
-const tireReadings = {}; 
 const currentTireStatus = {}; 
 
-// Tetapan Had Awal (Number)
-let minLimit = 90;
-let maxLimit = 120;
-
-function updateSafetyLabels() {
-    const optimalPsiEl = document.getElementById("optimal-psi-label"); 
-    const minPsiEl = document.getElementById("min-psi-label");         
-    
-    if (optimalPsiEl) optimalPsiEl.innerText = `${minLimit} - ${maxLimit} PSI`;
-    if (minPsiEl) minPsiEl.innerText = `< ${minLimit} PSI`;
-}
+// HAD KESELAMATAN TETAP (HARDCODED HAD MIN = 90 & MAX = 120)
+const MIN_SAFETY_LIMIT = 90;
+const MAX_SAFETY_LIMIT = 120;
 
 // Aktifkan Audio Context
 document.addEventListener("click", () => {
@@ -107,39 +97,8 @@ function showAppPopupNotification(title, message) {
 }
 
 // ==========================================
-// 4. PENILAIAN SEMULA TAYAR & ALERT PANEL
+// 4. KEMASKINI PANEL DIAGNOSTIK
 // ==========================================
-function reevaluateAllTires() {
-    Object.keys(tireMap).forEach(topic => {
-        const target = tireMap[topic];
-        const psiValue = tireReadings[target.name];
-
-        if (psiValue !== undefined) {
-            const boxElement = document.getElementById(target.boxId);
-            
-            const currentPsi = Number(psiValue);
-            const currentMin = Number(minLimit);
-            const currentMax = Number(maxLimit);
-
-            const isUnderMin = currentPsi < currentMin;
-            const isOverMax = currentPsi > currentMax;
-            const isWarning = isUnderMin || isOverMax;
-
-            if (boxElement) {
-                if (isWarning) {
-                    boxElement.classList.add("warning");
-                    currentTireStatus[target.name] = true;
-                } else {
-                    boxElement.classList.remove("warning");
-                    currentTireStatus[target.name] = false;
-                }
-            }
-        }
-    });
-
-    updateAlertPanel();
-}
-
 function updateAlertPanel() {
     const faultyTires = Object.keys(currentTireStatus).filter(name => currentTireStatus[name] === true);
     const alertPanel = document.getElementById("alert-panel");
@@ -154,7 +113,7 @@ function updateAlertPanel() {
         } else {
             alertPanel.classList.remove("danger");
             alertTitle.innerText = "SISTEM NORMAL";
-            alertMsg.innerText = `Semua tayar dalam julat selamat (${minLimit}-${maxLimit} PSI).`;
+            alertMsg.innerText = `Semua tayar dalam julat selamat (${MIN_SAFETY_LIMIT}-${MAX_SAFETY_LIMIT} PSI).`;
         }
     }
 }
@@ -169,68 +128,37 @@ client.on("connect", () => {
         statusBox.innerHTML = '<div class="pulse-dot"></div> CONNECTED';
     }
     
+    // Subscribe khusus kepada data tayar
     client.subscribe("lori/VKT8821/tayar/#");
-    client.subscribe("lori/VKT8821/config/#");
-    
-    updateSafetyLabels();
 });
 
 client.on("message", (topic, message) => {
     const msgString = message.toString().trim();
 
-    // 1. TERIMA TETAPAN MIN PSI
-    if (topic === "lori/VKT8821/config/minPSI") {
-        const parsedMin = Number(msgString);
-        if (!isNaN(parsedMin) && parsedMin > 0) {
-            minLimit = parsedMin;
-            console.log("[CONFIG] Had Min Berjaya Ditukar:", minLimit);
-            updateSafetyLabels();
-            reevaluateAllTires();
-        }
-        return;
-    }
-
-    // 2. TERIMA TETAPAN MAX PSI
-    if (topic === "lori/VKT8821/config/maxPSI") {
-        const parsedMax = Number(msgString);
-        if (!isNaN(parsedMax) && parsedMax > 0) {
-            maxLimit = parsedMax;
-            console.log("[CONFIG] Had Max Berjaya Ditukar:", maxLimit);
-            updateSafetyLabels();
-            reevaluateAllTires();
-        }
-        return;
-    }
-
-    // 3. TERIMA BACAAN TAYAR REAL-TIME
     if (tireMap[topic]) {
         try {
             let psiValue = 0;
 
             if (msgString.startsWith("{")) {
                 const data = JSON.parse(msgString);
-                psiValue = Number(data.psi ?? data.value ?? 0);
+                psiValue = parseFloat(data.psi ?? data.value ?? 0);
             } else {
-                psiValue = Number(msgString);
+                psiValue = parseFloat(msgString);
             }
 
             if (isNaN(psiValue)) return;
 
             const target = tireMap[topic];
-            tireReadings[target.name] = psiValue;
-
             const psiElement = document.getElementById(target.psiId);
             const boxElement = document.getElementById(target.boxId);
 
             if (psiElement && boxElement) {
-                psiElement.innerHTML = `${psiValue} <small>PSI</small>`;
+                // Paparkan nilai PSI
+                psiElement.innerHTML = `${Math.round(psiValue)} <small>PSI</small>`;
 
-                const currentPsi = Number(psiValue);
-                const currentMin = Number(minLimit);
-                const currentMax = Number(maxLimit);
-
-                const isUnderMin = currentPsi < currentMin;
-                const isOverMax = currentPsi > currentMax;
+                // LOGIK SEMAKAN HAD AMARAN
+                const isUnderMin = psiValue < MIN_SAFETY_LIMIT;
+                const isOverMax = psiValue > MAX_SAFETY_LIMIT;
                 const isWarning = isUnderMin || isOverMax;
 
                 if (isWarning) {
@@ -241,7 +169,7 @@ client.on("message", (topic, message) => {
                         const statusText = isUnderMin ? "TERLALU RENDAH" : "TERLALU TINGGI";
                         showAppPopupNotification(
                             "AMARAN TPMS LORI", 
-                            `Tayar ${target.name} ${statusText}! Bacaan: ${currentPsi} PSI (Had: ${currentMin}-${currentMax}).`
+                            `Tayar ${target.name} ${statusText}! Bacaan: ${Math.round(psiValue)} PSI (Had: ${MIN_SAFETY_LIMIT}-${MAX_SAFETY_LIMIT}).`
                         );
                     }
                 } else {
