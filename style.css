@@ -382,16 +382,15 @@ header {
 }
 
 /* ===================================================
-   8. KEKUATAN SPESIFISITI AMARAN (TANPA !IMPORTANT)
-   Diletakkan di paling bawah supaya mengatasi semua @media
+   8. PENINGKATAN SPESIFISITI CSS AMARAN
    =================================================== */
-.card.truck-visualizer .tire-overlay .tire-node .tire-box.warning {
+html body .container .card .tire-overlay .tire-node .tire-box.warning {
     border-color: #ff3366;
     background: rgba(255, 51, 102, 0.25);
     box-shadow: 0 0 15px rgba(255, 51, 102, 0.8);
     animation: blink 1s infinite alternate;
 }
 
-.card.truck-visualizer .tire-overlay .tire-node .tire-box.warning .psi {
+html body .container .card .tire-overlay .tire-node .tire-box.warning .psi {
     color: #ff3366;
 }
