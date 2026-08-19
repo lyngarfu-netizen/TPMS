@@ -7,12 +7,11 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#00f2fe">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00f2fe">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- Library QR Code & Scanner -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -39,7 +38,7 @@
 
         <!-- TAMPILAN UNTUK PC / LAPTOP -->
         <div id="pc-section">
-            <p class="instruction">Masukkan <b>Kod Unik Kenderaan</b> untuk log masuk atau imbas QR menggunakan telefon bimbit.</p>
+            <p class="instruction">Masukkan **Kod Unik Kenderaan** untuk log masuk atau imbas QR menggunakan telefon bimbit.</p>
             <input type="text" id="pc-code-input" placeholder="Contoh: TPMS-8821" value="TPMS-8821">
             <button class="btn" onclick="loginWithCodePC()">MASUK DASHBOARD</button>
             
@@ -51,6 +50,7 @@
         <!-- TAMPILAN UNTUK PHONE -->
         <div id="mobile-section" class="hidden">
             <p class="instruction">Log masuk sistem TPMS melalui Telefon Bimbit.</p>
+            
             <button class="btn btn-scan" onclick="startQRScanner()"><i class="fa-solid fa-qrcode"></i> IMBAS QR CODE</button>
             
             <div id="reader" class="hidden"></div>
@@ -62,16 +62,27 @@
         </div>
     </div>
 
-    <!-- Panggil Skrip Logik Login -->
+    <script>
+function checkLogin(event) {
+    event.preventDefault();
+    const pass = document.getElementById("password-input").value;
+    if (pass === "1234" || pass === "TPMS-8821") { // Masukkan password korang
+        localStorage.setItem("tpms_logged_in", "true");
+        window.location.href = "dashboard.html"; // Buka dashboard
+    } else {
+        alert("Katalaluan Salah!");
+    }
+}
+</script>
+
     <script src="script-login.js"></script>
 
-    <!-- Pendaftaran Service Worker -->
     <script>
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("sw.js")
-          .then(() => console.log("Service Worker Berjaya Didaftarkan!"))
-          .catch((err) => console.log("SW Error:", err));
-      }
-    </script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js")
+      .then(() => console.log("Service Worker Berjaya Didaftarkan!"))
+      .catch((err) => console.log("SW Error:", err));
+  }
+</script>
 </body>
 </html>
