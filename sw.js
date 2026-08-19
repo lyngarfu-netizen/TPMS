@@ -42,7 +42,7 @@ self.addEventListener('push', function(event) {
     );
 });
 
-// Tindakan apabila pengguna klik pada notifikasi (Diperbetulkan ke dashboard.html)
+// Tindakan apabila pengguna klik pada notifikasi
 self.addEventListener('notificationclick', function(event) {
     event.notification.close();
     event.waitUntil(
