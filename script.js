@@ -1,5 +1,5 @@
 // ==========================================
-// TPMS DASHBOARD - FULL JAVASCRIPT
+// TPMS DASHBOARD - FULL JAVASCRIPT (WITH PUSH NOTIFICATION)
 // ==========================================
 
 // 1. FUNGSI LOGOUT
@@ -33,7 +33,7 @@ function updateSafetyLimitsDisplay() {
     }
 }
 
-// 5. FUNGSI UPDATE STATUS TAYAR
+// 5. FUNGSI UPDATE STATUS TAYAR & PENCETUS NOTIFIKASI
 function checkAndUpdateTire(boxId, psiId, psiValue, tireName) {
     const psiElement = document.getElementById(psiId);
     const boxElement = document.getElementById(boxId);
@@ -67,6 +67,9 @@ function checkAndUpdateTire(boxId, psiId, psiValue, tireName) {
         boxElement.classList.add("warning");
 
         currentTireStatus[tireName] = true;
+
+        // CETUSKAN NOTIFIKASI LOKAL JIKA ADA AMARAN TAYAR
+        triggerLocalNotification("AMARAN TPMS: " + tireName, `Tekanan tidak selamat: ${Math.round(psiValue)} PSI!`);
     } 
     // JIKA PSI NORMAL
     else {
@@ -83,9 +86,24 @@ function checkAndUpdateTire(boxId, psiId, psiValue, tireName) {
     updateAlertPanel();
 }
 
-// 6. UPDATE ALERT PANEL
+// 6. FUNGSI PAPAR NOTIFIKASI MELALUI SERVICE WORKER
+function triggerLocalNotification(title, message) {
+    if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+        navigator.serviceWorker.ready.then((registration) => {
+            registration.showNotification(title, {
+                body: message,
+                icon: '192icon.png',
+                badge: '192icon.png',
+                vibrate: [300, 100, 300],
+                tag: 'tpms-warning',
+                renotify: true
+            });
+        });
+    }
+}
+
+// 7. UPDATE ALERT PANEL
 function updateAlertPanel() {
-    // RUNKAN SENTIASA UPDATE TEKS BAWAH BILA PANELS REFRESH
     updateSafetyLimitsDisplay();
 
     const faultyTires = Object.keys(currentTireStatus).filter(
@@ -113,7 +131,7 @@ function updateAlertPanel() {
     }
 }
 
-// 7. MQTT CONNECT
+// 8. MQTT CONNECT
 client.on("connect", () => {
     console.log("MQTT CONNECTED!");
     const statusBox = document.getElementById("connection-status");
@@ -144,7 +162,7 @@ client.on("close", () => {
     }
 });
 
-// 8. MQTT MESSAGE RECEIVER
+// 9. MQTT MESSAGE RECEIVER
 client.on("message", (topic, message) => {
     const msgString = message.toString().trim();
     const cleanTopic = topic.toLowerCase();
@@ -184,9 +202,31 @@ client.on("message", (topic, message) => {
     }
 });
 
-// 9. INITIAL STATUS
+// 10. DAFTAR SERVICE WORKER & MOHON KEBENARAN NOTIFIKASI
 document.addEventListener("DOMContentLoaded", () => {
     console.log("TPMS Dashboard Loaded");
     updateSafetyLimitsDisplay();
     updateAlertPanel();
+
+    // Daftar Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+            .then((registration) => {
+                console.log('Service Worker berjaya didaftarkan:', registration.scope);
+            })
+            .catch((error) => {
+                console.error('Pendaftaran Service Worker gagal:', error);
+            });
+    }
+
+    // Minta izin kebenaran notifikasi automatik
+    if ('Notification' in window) {
+        if (Notification.permission === 'default') {
+            Notification.requestPermission().then((permission) => {
+                if (permission === 'granted') {
+                    console.log('Kebenaran notifikasi diberikan!');
+                }
+            });
+        }
+    }
 });
