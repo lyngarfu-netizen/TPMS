@@ -1,3 +1,4 @@
+
 // ==========================================
 // SERVICE WORKER UNTUK PWA & NOTIFIKASI
 // ==========================================
@@ -9,17 +10,11 @@ self.addEventListener("install", (e) => {
 
 self.addEventListener("activate", (e) => {
   console.log("[Service Worker] Activated");
-  return self.clients.claim();
 });
 
 self.addEventListener("fetch", (e) => {
   // Biarkan network lalu secara normal supaya data MQTT kekal live
-  e.respondWith(
-    fetch(e.request).catch(() => {
-      // Fallback jika offline (pilihan)
-      return caches.match(e.request);
-    })
-  );
+  e.respondWith(fetch(e.request));
 });
 
 // Menangkap event Push Notification dari pelayan/latar belakang
@@ -38,7 +33,7 @@ self.addEventListener('push', function(event) {
         body: data.body,
         icon: '192icon.png',
         badge: '192icon.png',
-        vibrate: [300, 100, 300, 100, 300], 
+        vibrate: [300, 100, 300, 100, 300], // Getar berulang kali
         tag: 'tpms-warning',
         renotify: true
     };
@@ -52,6 +47,6 @@ self.addEventListener('push', function(event) {
 self.addEventListener('notificationclick', function(event) {
     event.notification.close();
     event.waitUntil(
-        clients.openWindow('./dashboard.html')
+        clients.openWindow('./index.html')
     );
 });
