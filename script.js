@@ -1,5 +1,5 @@
 // ==========================================
-// TPMS DASHBOARD - FULL JAVASCRIPT (WITH PUSH NOTIFICATION)
+// TPMS DASHBOARD - FULL JAVASCRIPT
 // ==========================================
 
 // 1. FUNGSI LOGOUT
@@ -33,7 +33,7 @@ function updateSafetyLimitsDisplay() {
     }
 }
 
-// 5. FUNGSI UPDATE STATUS TAYAR & PENCETUS NOTIFIKASI
+// 5. FUNGSI UPDATE STATUS TAYAR
 function checkAndUpdateTire(boxId, psiId, psiValue, tireName) {
     const psiElement = document.getElementById(psiId);
     const boxElement = document.getElementById(boxId);
@@ -67,9 +67,6 @@ function checkAndUpdateTire(boxId, psiId, psiValue, tireName) {
         boxElement.classList.add("warning");
 
         currentTireStatus[tireName] = true;
-
-        // CETUSKAN NOTIFIKASI LOKAL JIKA ADA AMARAN TAYAR
-        triggerLocalNotification("AMARAN TPMS: " + tireName, `Tekanan tidak selamat: ${Math.round(psiValue)} PSI!`);
     } 
     // JIKA PSI NORMAL
     else {
@@ -86,24 +83,9 @@ function checkAndUpdateTire(boxId, psiId, psiValue, tireName) {
     updateAlertPanel();
 }
 
-// 6. FUNGSI PAPAR NOTIFIKASI MELALUI SERVICE WORKER
-function triggerLocalNotification(title, message) {
-    if ('serviceWorker' in navigator && Notification.permission === 'granted') {
-        navigator.serviceWorker.ready.then((registration) => {
-            registration.showNotification(title, {
-                body: message,
-                icon: '192icon.png',
-                badge: '192icon.png',
-                vibrate: [300, 100, 300],
-                tag: 'tpms-warning',
-                renotify: true
-            });
-        });
-    }
-}
-
-// 7. UPDATE ALERT PANEL
+// 6. UPDATE ALERT PANEL
 function updateAlertPanel() {
+    // RUNKAN SENTIASA UPDATE TEKS BAWAH BILA PANELS REFRESH
     updateSafetyLimitsDisplay();
 
     const faultyTires = Object.keys(currentTireStatus).filter(
@@ -131,7 +113,7 @@ function updateAlertPanel() {
     }
 }
 
-// 8. MQTT CONNECT
+// 7. MQTT CONNECT
 client.on("connect", () => {
     console.log("MQTT CONNECTED!");
     const statusBox = document.getElementById("connection-status");
@@ -162,7 +144,7 @@ client.on("close", () => {
     }
 });
 
-// 9. MQTT MESSAGE RECEIVER
+// 8. MQTT MESSAGE RECEIVER
 client.on("message", (topic, message) => {
     const msgString = message.toString().trim();
     const cleanTopic = topic.toLowerCase();
@@ -202,63 +184,9 @@ client.on("message", (topic, message) => {
     }
 });
 
-// 10. DAFTAR SERVICE WORKER & MOHON KEBENARAN NOTIFIKASI
+// 9. INITIAL STATUS
 document.addEventListener("DOMContentLoaded", () => {
     console.log("TPMS Dashboard Loaded");
     updateSafetyLimitsDisplay();
     updateAlertPanel();
-
-    // Daftar Service Worker
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
-            .then((registration) => {
-                console.log('Service Worker berjaya didaftarkan:', registration.scope);
-            })
-            .catch((error) => {
-                console.error('Pendaftaran Service Worker gagal:', error);
-            });
-    }
-
-    // Minta izin kebenaran notifikasi automatik
-    if ('Notification' in window) {
-        if (Notification.permission === 'default') {
-            Notification.requestPermission().then((permission) => {
-                if (permission === 'granted') {
-                    console.log('Kebenaran notifikasi diberikan!');
-                }
-            });
-        }
-    }
 });
-
-
-// Gantikan dengan Token dan Chat ID bot Telegram anda sendiri
-const TELEGRAM_BOT_TOKEN = '8671783367:AAHJmt-8pgn-S2geNPsHTTku2GCjGLUTDbk';
-const TELEGRAM_CHAT_ID = '1501342995';
-
-function hantarNotifikasiTelegram(pesanTeks) {
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-    
-    const data = {
-        chat_id: 1501342995,
-        text: pesanTeks,
-        parse_mode: 'Markdown'
-    };
-
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.ok) {
-            console.log("Notifikasi Telegram berjaya dihantar!");
-        } else {
-            console.error("Gagal hantar Telegram:", data);
-        }
-    })
-    .catch(error => console.error("Ralat rangkaian Telegram:", error));
-}
