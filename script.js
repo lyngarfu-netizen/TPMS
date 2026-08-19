@@ -234,7 +234,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Gantikan dengan Token dan Chat ID bot Telegram anda sendiri
 const TELEGRAM_BOT_TOKEN = '8671783367:AAHJmt-8pgn-S2geNPsHTTku2GCjGLUTDbk';
-const TELEGRAM_CHAT_ID = '8671783367:AAHJmt-8pgn-S2geNPsHTTku2GCjGLUTDbk';
+const TELEGRAM_CHAT_ID = '1501342995';
 
 function hantarNotifikasiTelegram(pesanTeks) {
     const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
