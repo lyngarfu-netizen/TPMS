@@ -32,7 +32,7 @@ self.addEventListener('push', function(event) {
         body: data.body,
         icon: '192icon.png',
         badge: '192icon.png',
-        vibrate: [300, 100, 300, 100, 300], // Getar berulang kali
+        vibrate: [300, 100, 300, 100, 300], 
         tag: 'tpms-warning',
         renotify: true
     };
@@ -42,10 +42,10 @@ self.addEventListener('push', function(event) {
     );
 });
 
-// Tindakan apabila pengguna klik pada notifikasi
+// Tindakan apabila pengguna klik pada notifikasi (Diperbetulkan ke dashboard.html)
 self.addEventListener('notificationclick', function(event) {
     event.notification.close();
     event.waitUntil(
-        clients.openWindow('./index.html')
+        clients.openWindow('./dashboard.html')
     );
 });
